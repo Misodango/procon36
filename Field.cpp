@@ -17,6 +17,12 @@ Field::Field(int32 size) : size(size), entityCount(size* size / 2 - 1), entities
 
 Field::Field(const Field& other) : size(other.size), entityCount(other.entityCount), entities(other.entities) {}
 
+/*
+*  @brief フィールドのコピー代入演算子
+* @param other コピー元のフィールド
+* @return コピーされたフィールド
+*/
+
 Field& Field::operator=(const Field& other) {
 	if (this != &other) {
 		size = other.size;

@@ -12,16 +12,17 @@ private:
 	Field m_currentField;
 	Solution m_solution;
 	Array<Operation> m_operations;
-	int m_currentStep = 0;
+	int32 m_currentStep = 0;
 	bool m_isPlaying = false;
 	double m_playSpeed = 1.0;
-	int m_lastUpdateTime = 0;
+	int32 m_lastUpdateTime = 0;
 
 	// UI関連
 	Rect m_fieldRect;
 	Rect m_controlRect;
 	bool m_slider;
-	int m_windowWidth, m_windowHeight;
+	int32 m_windowWidth, m_windowHeight;
+	double m_sliderValue;
 
 	// ボタン
 	Rect m_playButton, m_pauseButton, m_resetButton;

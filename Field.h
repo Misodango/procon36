@@ -1,5 +1,8 @@
-﻿class Field {
+﻿#pragma once
 
+#include <Siv3D.hpp> // 必要なヘッダファイルをインクルード
+
+class Field {
 public:
 	// フィールドのサイズ
 	int32 size;
@@ -40,5 +43,6 @@ public:
 
 	// フィールドのサイズを取得
 	int32 getSize() const;
-};
 
+	Field() = default;
+};

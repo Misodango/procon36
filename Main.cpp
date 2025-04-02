@@ -3,7 +3,7 @@
 # include "Field.h"
 # include "Algorithm.h"
 # include "PuzzleVisualizer.h"
-#include "Main.h"
+
 
 /*
 * # procon36
@@ -19,6 +19,9 @@ void Main()
 	// 背景の色を設定する
 	Scene::SetBackground(ColorF{ 0.6, 0.8, 0.7 });
 
+	// フルスクリーン
+	Window::SetFullscreen(true);
+
 	// JSON読み込み
 	// JSON ファイルのパス
 	const FilePath path = FileSystem::FullPath(U"input.json");
@@ -29,14 +32,11 @@ void Main()
 	// solve
 	Algorithm algorithm(field);
 	Solution solution = algorithm.run(Solution::Type::Greedy);
-
-	int32 stepCount = 0;
-	int32 maxStep = solution.ops.size();
+	PuzzleVisualizer visualizer(field, solution);
+	visualizer.run();
 	while (System::Update())
 	{
-		Solution solution = algorithm.run(Solution::Type::Greedy);
-		PuzzleVisualizer visualizer(field, solution);
-		visualizer.run();
+
 	}
 
 
