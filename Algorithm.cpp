@@ -21,6 +21,7 @@ Solution Algorithm::run(const Solution::Type type)
 	{
 		GreedyAlgorithm greedyAlgorithm(m_field);
 		solution = greedyAlgorithm.run();
+		break;
 	}
 	default:
 		break;

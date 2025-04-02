@@ -135,3 +135,38 @@ void Field::draw() const {
 	Rect(0, 0, size * 50, size * 50).drawFrame(2, Palette::Black);
 
 }
+
+
+/*
+* @brief フィールドのペアを数える
+* @return int32
+*/
+
+int32 Field::countPairs() const {
+	const int32 dx[4] = { 1, 0, -1, 0 };
+	const int32 dy[4] = { 0, 1, 0, -1 };
+	int32 res = 0;
+	Array<bool> seen(size * size / 2, false);
+	for (int32 i : step(size)) {
+		for (int32 j : step(size)) {
+			int32 cur = entities[i][j];
+			if (seen[cur]) {
+				continue;
+			}
+			for (int32 k : step(4)) {
+				int32 y = i + dy[k];
+				int32 x = j + dx[k];
+				if (x < 0 || size <= x || y < 0 || size <= y) {
+					continue;
+				}
+				int32 nxt = entities[y][x];
+				if (nxt != cur) continue;
+				seen[cur] = true;
+				res++;
+				break;
+			}
+
+		}
+	}
+	return res;
+}

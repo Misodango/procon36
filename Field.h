@@ -29,4 +29,7 @@ public:
 
 	// フィールドを描画する関数
 	void draw() const;
+
+	// フィールドのペアを数える
+	int32 countPairs() const;
 };
