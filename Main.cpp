@@ -21,7 +21,7 @@ void Main()
 	const FilePath path = FileSystem::FullPath(U"input.json");
 	Console << path;
 	// JSON パーサーの生成
-	const Field field = Field::fromPath(path);
+	Field field = Field::fromPath(path);
 	
 	while (System::Update())
 	{
