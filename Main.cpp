@@ -3,6 +3,7 @@
 # include "Field.h"
 # include "Algorithm.h"
 # include "PuzzleVisualizer.h"
+#include "Main.h"
 
 /*
 * # procon36
@@ -33,17 +34,9 @@ void Main()
 	int32 maxStep = solution.ops.size();
 	while (System::Update())
 	{
-		// フィールドを描画
-		field.draw();
-
-		const auto [x, y, n] = solution.ops[stepCount];
-		field.rotate(x, y, n);
-		if (stepCount >= maxStep) stepCount = 0;
-		if (field.countPairs() == field.size * field.size / 2) {
-			// ペアの数が最大になったら停止
-			Print << U"Finish!";
-			isField = true;
-		}
+		Solution solution = algorithm.run(Solution::Type::Greedy);
+		PuzzleVisualizer visualizer(field, solution);
+		visualizer.run();
 	}
 
 

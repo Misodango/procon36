@@ -15,9 +15,17 @@ Field::Field(int32 size) : size(size), entityCount(size* size / 2 - 1), entities
 *  @return コピーされたフィールド
 */
 
-Field::Field(const Field& other)
-{
+Field::Field(const Field& other) : size(other.size), entityCount(other.entityCount), entities(other.entities) {}
+
+Field& Field::operator=(const Field& other) {
+	if (this != &other) {
+		size = other.size;
+		entityCount = other.entityCount;
+		entities = other.entities;
+	}
+	return *this;
 }
+
 
 /*
 *  @brief ランダムにフィールドを生成する
@@ -179,4 +187,13 @@ int32 Field::countPairs() const {
 		}
 	}
 	return res;
+}
+
+/*
+* @brief フィールドのサイズを取得
+* @return int32
+*/
+
+int32 Field::getSize() const {
+	return size;
 }

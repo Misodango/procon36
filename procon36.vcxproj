@@ -337,7 +337,9 @@
     <ClInclude Include="Field.h" />
     <ClInclude Include="GreedyAlgorithm.h" />
     <ClInclude Include="JsonParser.h" />
+    <ClInclude Include="Main.h" />
     <ClInclude Include="NetWorkManager.h" />
+    <ClInclude Include="PuzzleVisualizer.h" />
     <ClInclude Include="Solution.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

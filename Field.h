@@ -1,10 +1,11 @@
 ﻿class Field {
+
 public:
 	// フィールドのサイズ
-	const int32 size;
+	int32 size;
 
 	// エンティティの数
-	const int32 entityCount;
+	int32 entityCount;
 
 	// エンティティの値を保持する2次元配列
 	Grid<int32> entities;
@@ -36,4 +37,8 @@ public:
 
 	// フィールドのペアを数える
 	int32 countPairs() const;
+
+	// フィールドのサイズを取得
+	int32 getSize() const;
 };
+

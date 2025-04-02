@@ -1,5 +1,7 @@
 ﻿#include "Algorithm.h"
 #include "GreedyAlgorithm.h"
+#include "Solution.h"
+#include "Field.h"
 
 /*
 * @brief Algorithmのコンストラクタ
@@ -9,7 +11,11 @@
 
 Algorithm::Algorithm(const Field& field) : m_field(field) {}
 
-
+/*
+* @brief Algorithmの実行
+* @param type 解法の種類
+* @return Solution
+*/
 
 Solution Algorithm::run(const Solution::Type type)
 {
