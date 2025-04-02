@@ -19,7 +19,6 @@ void Main()
 	// JSON読み込み
 	// JSON ファイルのパス
 	const FilePath path = FileSystem::FullPath(U"input.json");
-	Console << path;
 	// JSON パーサーの生成
 	Field field = Field::fromPath(path);
 	

@@ -59,7 +59,6 @@ Field Field::fromJSON(const JSON& json) {
 Field Field::fromPath(const FilePath& path) {
 
 	const JSON json = JSON::Load(path);
-	Console << json;
 	if (json) {
 		return Field::fromJSON(json);
 	}

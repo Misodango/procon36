@@ -19,7 +19,8 @@ struct Solution
 	Type type;
 	Array<Operation> ops;
 
-	JSON toJSON() const;
+	Solution();
+	Solution(Array<Operation>);
 
-	static String ToString(Type type);
+
 };
