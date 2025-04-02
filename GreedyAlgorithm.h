@@ -11,6 +11,9 @@ public:
 	// GreedyAlgorithmの実行
 	Solution run();
 
+	// フィールド全体のペアの数をカウント
+	int32 countPairs() const;
+
 private:
 	// フィールド
 	Field m_field;
