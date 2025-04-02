@@ -11,12 +11,6 @@
 * 
 */
 
-/*
-* @brief ランダムにフィールドを生成し，保存
-* @param size フィールドのサイズ
-* @return ランダム生成されたフィールド
-*/
-
 void Main()
 {
 	// 背景の色を設定する
@@ -24,10 +18,11 @@ void Main()
 
 	// JSON読み込み
 	// JSON ファイルのパス
-	const FilePath path = U"input.json";
+	const FilePath path = FileSystem::FullPath(U"input.json");
+	Console << path;
 	// JSON パーサーの生成
-	// const Field field = Field::fromPath(path);
-	const Field field = Field::random(4);
+	const Field field = Field::fromPath(path);
+	
 	while (System::Update())
 	{
 		// フィールドを描画

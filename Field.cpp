@@ -57,7 +57,9 @@ Field Field::fromJSON(const JSON& json) {
 */
 
 Field Field::fromPath(const FilePath& path) {
+
 	const JSON json = JSON::Load(path);
+	Console << json;
 	if (json) {
 		return Field::fromJSON(json);
 	}
@@ -67,14 +69,37 @@ Field Field::fromPath(const FilePath& path) {
 	return Field(0);
 }
 
+/*
+* @ brief 任意の座標に導きを適用
+* @ param x x座標 y y座標 n サイズ
+* @ return void
+*/
+
 void Field::rotate(int32 x, int32 y, int32 n) {
 	// 範囲外チェック
 	if (x < 0 || y < 0 || x + n > size || y + n > size) {
 		return;
 	}
 
-	// 指定範囲を90度回転させるコード
-	// 一時的な配列を使って値を入れ替える
+	// n <= 1の回転は無効
+	if (n <= 1) {
+		return;
+	}
+
+	Grid<int32> temp(n, n);
+	// 回転前の値を一時的な配列にコピー
+	for (int32 i = 0; i < n; ++i) {
+		for (int32 j = 0; j < n; ++j) {
+			temp[i][j] = entities[y + i][x + j];
+		}
+	}
+
+	// 90度時計回りに回転させて元の配列にコピー
+	for (int32 i = 0; i < n; ++i) {
+		for (int32 j = 0; j < n; ++j) {
+			entities[y + j][x + n - 1 - i] = temp[i][j];
+		}
+	}
 }
 
 /*
@@ -98,15 +123,15 @@ void Field::draw() const {
 			colors[i] = ColorF(HSV(h * 360.0, 0.7, 0.95));
 		}
 	}
-	Console << colors;
-	for (int32 x : step(size)) {
-		for (int32 y : step(size)) {
-			Console << entities[x][y] << U": " << colors[entities[x][y]];
-			Rect(x * 50, y * 50, 50, 50).draw(colors[entities[x][y]]);
-			font(copysign(entities[x][y], 1)).drawAt(x * 50 + 25, y * 50 + 25, Palette::Black);
+
+	for (int32 y : step(size)) {
+		for (int32 x : step(size)) {
+
+			Rect(x * 50, y * 50, 50, 50).draw(colors[entities[y][x]]);
+			font(copysign(entities[y][x], 1)).drawAt(x * 50 + 25, y * 50 + 25, Palette::Black);
 		}
 	}
-	Console << U"done";
+
 	// フィールドの枠を描画
 	Rect(0, 0, size * 50, size * 50).drawFrame(2, Palette::Black);
 
