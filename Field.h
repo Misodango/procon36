@@ -1,6 +1,4 @@
-﻿#pragma once
-
-class Field {
+﻿class Field {
 public:
 	// フィールドのサイズ
 	const int32 size;
@@ -16,6 +14,12 @@ public:
 
 	// コンストラクタでフィールドを初期化
 	Field(int32 size);
+
+	// コピーコンストラクタ
+	Field(const Field& other);
+
+	// コピー代入演算子
+	Field& operator=(const Field& other);
 
 	// ランダムにフィールドを生成する関数
 	static Field random(int32 size);

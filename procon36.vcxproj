@@ -121,6 +121,7 @@
     <ClCompile Include="JsonParser.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="NetWorkManager.cpp" />
+    <ClCompile Include="PuzzleVisualizer.cpp" />
     <ClCompile Include="Solution.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

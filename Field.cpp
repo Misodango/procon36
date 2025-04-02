@@ -10,6 +10,16 @@
 Field::Field(int32 size) : size(size), entityCount(size* size / 2 - 1), entities(size, size, 0) {}
 
 /*
+*  @brief フィールドのコピーコンストラクタ
+*  @param other コピー元のフィールド
+*  @return コピーされたフィールド
+*/
+
+Field::Field(const Field& other)
+{
+}
+
+/*
 *  @brief ランダムにフィールドを生成する
 *  @param size フィールドのサイズ
 *  @return ランダム生成されたフィールド

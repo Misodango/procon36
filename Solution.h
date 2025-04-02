@@ -22,5 +22,12 @@ struct Solution
 	Solution();
 	Solution(Array<Operation>);
 
+	// 操作を追加
+	void add(Operation operation);
 
+	// 操作の数を取得
+	int32 getOperationCount() const;
+
+	// 操作を取得
+	void getOperation(int32 index, int32& x, int32& y, int32& size) const;
 };
