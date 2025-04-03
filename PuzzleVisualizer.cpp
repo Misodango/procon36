@@ -16,27 +16,24 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const Solution& so
 	m_font(24)
 {
 	// ウィンドウサイズの設定
-	m_windowWidth = 800;
-	m_windowHeight = 600;
-	Scene::Resize(m_windowWidth, m_windowHeight);
+	m_windowWidth = Scene::Width();
+	m_windowHeight = Scene::Height();
+	Scene::SetResizeMode(ResizeMode::Keep);
 
 	// フィールド表示領域とコントロール領域の設定
 	m_fieldRect = Rect(0, 0, m_windowWidth, m_windowHeight - 200);
 	m_controlRect = Rect(0, m_fieldRect.h, m_windowWidth, 200);
 
-	// スライダーの設定
-	// m_slider = Slider(Rect(m_controlRect.x + 100, m_controlRect.y + 20, m_controlRect.w - 200, 30), 0, static_cast<double>(m_solution.getOperationCount()));
-
 	// ボタンの設定
-	m_playButton = Rect(m_controlRect.x + 10, m_controlRect.y + 20, 50, 30);
+	m_playButton = Rect(m_controlRect.x + 10, m_controlRect.y + 20, 80, 40);
 	m_pauseButton = m_playButton;
-	m_resetButton = Rect(m_controlRect.x + m_controlRect.w - 60, m_controlRect.y + 20, 50, 30);
+	m_resetButton = Rect(m_controlRect.x + m_controlRect.w - 90, m_controlRect.y + 20, 80, 40);
 
-	m_nextButton = Rect(m_controlRect.x + 70, m_controlRect.y + 20, 30, 30);
-	m_prevButton = Rect(m_controlRect.x + 100, m_controlRect.y - 10, 30, 30); // スライダーの右にある
+	m_nextButton = Rect(m_controlRect.x + 100, m_controlRect.y + 20, 80, 40);
+	m_prevButton = Rect(m_controlRect.x + 190, m_controlRect.y + 20, 80, 40);
 
-	m_speedUpButton = Rect(m_controlRect.x + m_controlRect.w - 120, m_controlRect.y + 20, 50, 30);
-	m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 180, m_controlRect.y + 20, 50, 30);
+	m_speedUpButton = Rect(m_controlRect.x + m_controlRect.w - 180, m_controlRect.y + 20, 80, 40);
+	m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, m_controlRect.y + 20, 80, 40);
 
 	// 操作の取得
 	for (int i = 0; i < solution.getOperationCount(); i++) {
@@ -54,6 +51,25 @@ void PuzzleVisualizer::run()
 {
 	while (System::Update())
 	{
+		// ウィンドウサイズの更新
+		m_windowWidth = Scene::Width();
+		m_windowHeight = Scene::Height();
+
+		// フィールド表示領域とコントロール領域の更新
+		m_fieldRect = Rect(0, 0, m_windowWidth, m_windowHeight - 200);
+		m_controlRect = Rect(0, m_fieldRect.h, m_windowWidth, 200);
+
+		// ボタンの更新
+		m_playButton = Rect(m_controlRect.x + 10, m_controlRect.y + 20, 80, 40);
+		m_pauseButton = m_playButton;
+		m_resetButton = Rect(m_controlRect.x + m_controlRect.w - 90, m_controlRect.y + 20, 80, 40);
+
+		m_nextButton = Rect(m_controlRect.x + 100, m_controlRect.y + 20, 80, 40);
+		m_prevButton = Rect(m_controlRect.x + 190, m_controlRect.y + 20, 80, 40);
+
+		m_speedUpButton = Rect(m_controlRect.x + m_controlRect.w - 180, m_controlRect.y + 20, 80, 40);
+		m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, m_controlRect.y + 20, 80, 40);
+
 		// 入力処理
 		handleInput();
 
@@ -61,7 +77,7 @@ void PuzzleVisualizer::run()
 		update();
 
 		// フィールドの描画
-		m_currentField.draw();
+		drawField();
 
 		// 現在の操作を視覚化（部分グリッドのハイライト）
 		if (m_currentStep > 0 && m_currentStep <= m_operations.size()) {
@@ -86,9 +102,10 @@ void PuzzleVisualizer::drawControls()
 	m_controlRect.draw(ColorF(0.2, 0.2, 0.2, 0.8));
 
 	// スライダー
-	SimpleGUI::Slider(U"Step:{}/{}"_fmt(m_currentStep, m_operations.size()),
-		m_sliderValue, m_currentStep, m_operations.size(),
-		Vec2(m_controlRect.x + 100, m_controlRect.y + 20), m_controlRect.w - 200
+	m_slider = SimpleGUI::Slider(U"Step:{}/{}"_fmt(m_currentStep, m_operations.size()),
+		m_sliderValue, 0, m_operations.size(),
+		Vec2(m_controlRect.x + 400, m_controlRect.y + 20),
+		100, 1000
 	);
 
 	// 再生・一時停止ボタン
@@ -178,7 +195,7 @@ void PuzzleVisualizer::handleInput()
 
 	// 速度調節ボタン
 	if (m_speedUpButton.leftClicked()) {
-		m_playSpeed = Min(m_playSpeed * 1.5, 8.0);
+		m_playSpeed = Min(m_playSpeed * 1.5, 10.0);
 	}
 
 	if (m_speedDownButton.leftClicked()) {
@@ -209,7 +226,7 @@ void PuzzleVisualizer::update()
 	// 再生中なら自動的に次のステップへ
 	if (m_isPlaying && m_currentStep < m_operations.size()) {
 		int currentTime = static_cast<int>(Scene::Time() * 1000);
-		if (currentTime - m_lastUpdateTime > 1000 / m_playSpeed) {
+		if (currentTime - m_lastUpdateTime > 100 / m_playSpeed) {
 			m_currentStep++;
 			updateFieldToCurrentStep();
 			m_sliderValue = m_currentStep;
@@ -222,3 +239,46 @@ void PuzzleVisualizer::update()
 		}
 	}
 }
+
+/*
+* @brief フィールドの描画
+*/
+
+void PuzzleVisualizer::drawField() const
+{
+	const int gridSize = m_initialField.getSize();
+	const int cellSize = Min(m_fieldRect.w, m_fieldRect.h) / gridSize;
+	static Array<Color> colors;
+	static const Font font(20);
+
+	// Initialize colors only once
+	if (colors.isEmpty()) {
+		colors.resize(m_initialField.entityCount + 1);
+
+		// Golden ratio approach for better distribution
+		const double goldenRatioConjugate = 0.618033988749895;
+		double h = 0.5; // Starting hue
+
+		for (int i = 0; i <= m_initialField.entityCount; ++i) {
+			h = fmod(h + goldenRatioConjugate, 1.0);
+			colors[i] = ColorF(HSV(h * 360.0, 0.7, 0.95));
+		}
+	}
+
+	// フィールドの背景
+	m_fieldRect.draw(ColorF(0.9, 0.9, 0.9));
+
+	// グリッドの描画
+	for (int y = 0; y < gridSize; ++y) {
+		for (int x = 0; x < gridSize; ++x) {
+			Rect(m_fieldRect.x + x * cellSize, m_fieldRect.y + y * cellSize, cellSize, cellSize)
+				.draw(colors[m_currentField.entities[y][x]])
+				.drawFrame(1, 0, ColorF(0.0, 0.0, 0.0));
+			font(copysign(m_currentField.entities[y][x], 1)).drawAt(m_fieldRect.x + x * cellSize + cellSize / 2, m_fieldRect.y + y * cellSize + cellSize / 2, Palette::Black);
+		}
+	}
+
+	// フィールドの枠を描画
+	m_fieldRect.drawFrame(2, Palette::Black);
+}
+

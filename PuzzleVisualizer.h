@@ -32,13 +32,20 @@ private:
 	// フォント
 	Font m_font;
 
+	// フィールドの描画
 	void drawControls();
 
+	// スライダーの値を取得
 	void handleInput();
 
+	// 現在のステップにフィールドを更新
 	void updateFieldToCurrentStep();
 
+	// フィールドの更新
 	void update();
+
+	// フィールドの描画
+	void drawField() const;
 
 public:
 	PuzzleVisualizer(const Field& initialField, const Solution& solution);
