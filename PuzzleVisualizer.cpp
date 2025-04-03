@@ -13,7 +13,8 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const Solution& so
 	m_initialField(initialField),
 	m_currentField(initialField),
 	m_solution(solution),
-	m_font(24)
+	m_font(24),
+	m_showNumbers(true)
 {
 	// ウィンドウサイズの設定
 	m_windowWidth = Scene::Width();
@@ -34,6 +35,10 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const Solution& so
 
 	m_speedUpButton = Rect(m_controlRect.x + m_controlRect.w - 180, m_controlRect.y + 20, 80, 40);
 	m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, m_controlRect.y + 20, 80, 40);
+
+	m_showNumbersButton = Rect(m_controlRect.x + 300, m_controlRect.y + 20, 80, 40);
+
+	m_playerExitButton = Rect(m_controlRect.x + 400, m_controlRect.y + 20, 80, 40);
 
 	// 操作の取得
 	for (int i = 0; i < solution.getOperationCount(); i++) {
@@ -69,6 +74,10 @@ void PuzzleVisualizer::run()
 
 		m_speedUpButton = Rect(m_controlRect.x + m_controlRect.w - 180, m_controlRect.y + 20, 80, 40);
 		m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, m_controlRect.y + 20, 80, 40);
+
+		m_showNumbersButton = Rect(m_controlRect.x + 300, m_controlRect.y + 20, 80, 40);
+
+		m_playerExitButton = Rect(m_controlRect.x + 400, m_controlRect.y + 20, 80, 40);
 
 		// 入力処理
 		handleInput();
@@ -144,6 +153,15 @@ void PuzzleVisualizer::drawControls()
 	m_speedDownButton.drawFrame(2, 0, ColorF(1.0));
 	m_font(U"<<").drawAt(m_speedDownButton.center(), ColorF(1.0));
 
+	// 数字表示ボタン
+	m_showNumbersButton.drawFrame(2, 0, ColorF(1.0));
+	if (m_showNumbers) {
+		m_font(U"123").drawAt(m_showNumbersButton.center(), ColorF(1.0));
+	}
+	else {
+		m_font(U"").drawAt(m_showNumbersButton.center(), ColorF(1.0));
+	}
+
 	// 情報表示
 	m_font(U"Step: {}/{}"_fmt(m_currentStep, m_operations.size())).draw(m_controlRect.x + 10, m_controlRect.y + 80, ColorF(1.0));
 	m_font(U"Speed: x{:.1f}"_fmt(m_playSpeed)).draw(m_controlRect.x + 10, m_controlRect.y + 110, ColorF(1.0));
@@ -201,6 +219,12 @@ void PuzzleVisualizer::handleInput()
 	if (m_speedDownButton.leftClicked()) {
 		m_playSpeed = Max(m_playSpeed / 1.5, 0.25);
 	}
+
+	// 数字表示ボタン
+	if (m_showNumbersButton.leftClicked()) {
+		m_showNumbers ^= 1;
+		drawField();
+	}
 }
 
 /*
@@ -250,14 +274,12 @@ void PuzzleVisualizer::drawField() const
 	const int cellSize = Min(m_fieldRect.w, m_fieldRect.h) / gridSize;
 	static Array<Color> colors;
 	static const Font font(20);
+	static const double goldenRatioConjugate = 0.618033988749895;
 
-	// Initialize colors only once
 	if (colors.isEmpty()) {
 		colors.resize(m_initialField.entityCount + 1);
 
-		// Golden ratio approach for better distribution
-		const double goldenRatioConjugate = 0.618033988749895;
-		double h = 0.5; // Starting hue
+		double h = 0.5;
 
 		for (int i = 0; i <= m_initialField.entityCount; ++i) {
 			h = fmod(h + goldenRatioConjugate, 1.0);
@@ -273,8 +295,10 @@ void PuzzleVisualizer::drawField() const
 		for (int x = 0; x < gridSize; ++x) {
 			Rect(m_fieldRect.x + x * cellSize, m_fieldRect.y + y * cellSize, cellSize, cellSize)
 				.draw(colors[m_currentField.entities[y][x]])
-				.drawFrame(1, 0, ColorF(0.0, 0.0, 0.0));
-			font(copysign(m_currentField.entities[y][x], 1)).drawAt(m_fieldRect.x + x * cellSize + cellSize / 2, m_fieldRect.y + y * cellSize + cellSize / 2, Palette::Black);
+				.drawFrame(1, 0, ColorF(0.8, 0.8, 0.8));
+			if (m_showNumbers) {
+				font(copysign(m_currentField.entities[y][x], 1)).drawAt(m_fieldRect.x + x * cellSize + cellSize / 2, m_fieldRect.y + y * cellSize + cellSize / 2, Palette::Black);
+			}
 		}
 	}
 

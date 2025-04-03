@@ -26,12 +26,14 @@ void Main()
 	// JSON ファイルのパス
 	const FilePath path = FileSystem::FullPath(U"input.json");
 	// JSON パーサーの生成
-	Field field = Field::fromPath(path);
+	// Field field = Field::fromPath(path);
+	Field field = Field::random(24);
 	bool isField = true;
 
 	// solve
 	Algorithm algorithm(field);
-	Solution solution = algorithm.run(Solution::Type::Greedy);
+	// Solution solution = algorithm.run(Solution::Type::Greedy);
+	Solution solution;
 	PuzzleVisualizer visualizer(field, solution);
 	visualizer.run();
 	while (System::Update())
