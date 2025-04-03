@@ -184,6 +184,7 @@ void PuzzleVisualizer::drawControls()
 	m_font(U"Pairs: {}/{}"_fmt(pairs, totalPairs)).draw(m_controlRect.x + 10, m_controlRect.y + 140, ColorF(1.0));
 }
 
+
 /*
 * @brief PuzzleVisualizerの入力処理
 */

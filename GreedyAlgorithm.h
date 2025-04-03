@@ -11,6 +11,9 @@ public:
 	// GreedyAlgorithmの実行
 	Solution run();
 
+	// 先読みDFS
+	Solution runDFS(int32 depth);
+
 private:
 	// フィールド
 	Field m_field;

@@ -27,13 +27,13 @@ void Main()
 	const FilePath path = FileSystem::FullPath(U"input.json");
 	// JSON パーサーの生成
 	// Field field = Field::fromPath(path);
-	Field field = Field::random(24);
+	Field field = Field::random(4);
 	bool isField = true;
 
 	// solve
 	Algorithm algorithm(field);
-	// Solution solution = algorithm.run(Solution::Type::Greedy);
-	Solution solution;
+	Solution solution = algorithm.run(Solution::Type::Greedy);
+	
 	PuzzleVisualizer visualizer(field, solution);
 	visualizer.run();
 	while (System::Update())

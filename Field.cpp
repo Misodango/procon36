@@ -227,3 +227,171 @@ bool Field::isPair(int32 x, int32 y) const {
 	}
 	return false;
 }
+
+
+/*
+* @brief 左上から連続のペアを数える
+* @return int32
+*/
+
+int32 Field::countPairsFromTopLeftHorizontal() const {
+	const int32 dx[4] = { 1, 0, -1, 0 };
+	const int32 dy[4] = { 0, 1, 0, -1 };
+	int32 res = 0;
+	Array<bool> seen(size * size / 2, false);
+	for (int32 i : step(size)) {
+		for (int32 j : step(size)) {
+			int32 cur = entities[i][j];
+			if (seen[cur]) {
+				continue;
+			}
+			if (!isPair(i, j)) {
+				return res;
+			}
+			res++;
+			seen[cur] = true;
+		}
+	}
+	return res;
+}
+
+/*
+* @brief 左上から連続のペアを数える
+* @return int32
+*/
+
+int32 Field::countPairsFromTopLeftVertical() const {
+	const int32 dx[4] = { 1, 0, -1, 0 };
+	const int32 dy[4] = { 0, 1, 0, -1 };
+	int32 res = 0;
+	Array<bool> seen(size * size / 2, false);
+	for (int32 i : step(size)) {
+		for (int32 j : step(size)) {
+			int32 cur = entities[j][i];
+			if (seen[cur]) {
+				continue;
+			}
+			if (!isPair(j, i)) {
+				return res;
+			}
+			res++;
+			seen[cur] = true;
+		}
+	}
+	return res;
+}
+
+/*
+* @brief 合法手を取得
+* @return Array<Solution>
+*/
+Array<Solution> Field::getLegalMoves() const {
+	Array<Solution> legalMoves;
+	for (int32 y : step(size)) {
+		for (int32 x : step(size)) {
+			int32 range = size - Max(x, y);
+			for (int32 n : step(2, range + 1)) {
+				;
+			}
+		}
+	}
+	return legalMoves;
+}
+
+/*
+* @brief 終了判定
+* @return bool
+*/
+
+bool Field::isFinished() const {
+	return countPairs() == size * size / 2;
+}
+
+/*
+* @brief 右にペアがあるか判定
+* @param x x座標
+* @param y y座標
+* @return bool
+*/
+
+bool Field::hasPairRight(int32 x, int32 y) const {
+	return (x + 1 < size && entities[y][x] == entities[y][x + 1]);
+}
+
+/*
+* @brief 左にペアがあるか判定
+* @param x x座標
+* @param y y座標
+* @return bool
+*/
+
+bool Field::hasPairLeft(int32 x, int32 y) const {
+	return (x - 1 >= 0 && entities[y][x] == entities[y][x - 1]);
+}
+
+/*
+* @brief 上にペアがあるか判定
+* @param x x座標
+* @param y y座標
+* @return bool
+*/
+
+bool Field::hasPairUp(int32 x, int32 y) const {
+	return (y - 1 >= 0 && entities[y][x] == entities[y - 1][x]);
+}
+
+/*
+* @brief 下にペアがあるか判定
+* @param x x座標
+* @param y y座標
+* @return bool
+*/
+
+bool Field::hasPairDown(int32 x, int32 y) const {
+	return (y + 1 < size && entities[y][x] == entities[y + 1][x]);
+}
+
+/*
+* @brief 自信が右のペアか判定
+* @param x x座標
+* @param y y座標
+* @return bool
+*/
+
+bool Field::isPairRight(int32 x, int32 y) const {
+	return (0 <= x - 1 && entities[y][x] == entities[y][x - 1]);
+}
+
+/*
+* @brief 自信が左のペアか判定
+* @param x x座標
+* @param y y座標
+* @return bool
+*/
+
+bool Field::isPairLeft(int32 x, int32 y) const {
+	return (x + 1 < size && entities[y][x] == entities[y][x + 1]);
+}
+
+/*
+* @brief 自信が上のペアか判定
+* @param x x座標
+* @param y y座標
+* @return bool
+*/
+
+bool Field::isPairUp(int32 x, int32 y) const {
+	return (0 <= y - 1 && entities[y][x] == entities[y - 1][x]);
+}
+
+/*
+* @brief 自信が下のペアか判定
+* @param x x座標
+* @param y y座標
+* @return bool
+*/
+
+bool Field::isPairDown(int32 x, int32 y) const {
+	return (y + 1 < size && entities[y][x] == entities[y + 1][x]);
+}
+
