@@ -44,5 +44,8 @@ public:
 	// フィールドのサイズを取得
 	int32 getSize() const;
 
+	// ペアのマスかどうかを判定
+	bool isPair(int32 x, int32 y) const;
+
 	Field() = default;
 };

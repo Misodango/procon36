@@ -23,11 +23,16 @@ private:
 	bool m_slider;
 	int32 m_windowWidth, m_windowHeight;
 	double m_sliderValue;
+	bool m_showNumbers;
+	bool m_colorTile;
 
 	// ボタン
 	Rect m_playButton, m_pauseButton, m_resetButton;
 	Rect m_nextButton, m_prevButton;
 	Rect m_speedUpButton, m_speedDownButton;
+	Rect m_showNumbersButton;
+	Rect m_colorTileButton;
+	Rect m_playerExitButton;
 
 	// フォント
 	Font m_font;
