@@ -1,12 +1,14 @@
 ﻿#pragma once
 
+#include <Siv3D.hpp> // 必要なヘッダファイルをインクルード
+
 class Field {
 public:
 	// フィールドのサイズ
-	const int32 size;
+	int32 size;
 
 	// エンティティの数
-	const int32 entityCount;
+	int32 entityCount;
 
 	// エンティティの値を保持する2次元配列
 	Grid<int32> entities;
@@ -16,6 +18,12 @@ public:
 
 	// コンストラクタでフィールドを初期化
 	Field(int32 size);
+
+	// コピーコンストラクタ
+	Field(const Field& other);
+
+	// コピー代入演算子
+	Field& operator=(const Field& other);
 
 	// ランダムにフィールドを生成する関数
 	static Field random(int32 size);
@@ -29,4 +37,12 @@ public:
 
 	// フィールドを描画する関数
 	void draw() const;
+
+	// フィールドのペアを数える
+	int32 countPairs() const;
+
+	// フィールドのサイズを取得
+	int32 getSize() const;
+
+	Field() = default;
 };

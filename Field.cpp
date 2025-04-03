@@ -10,6 +10,30 @@
 Field::Field(int32 size) : size(size), entityCount(size* size / 2 - 1), entities(size, size, 0) {}
 
 /*
+*  @brief フィールドのコピーコンストラクタ
+*  @param other コピー元のフィールド
+*  @return コピーされたフィールド
+*/
+
+Field::Field(const Field& other) : size(other.size), entityCount(other.entityCount), entities(other.entities) {}
+
+/*
+*  @brief フィールドのコピー代入演算子
+* @param other コピー元のフィールド
+* @return コピーされたフィールド
+*/
+
+Field& Field::operator=(const Field& other) {
+	if (this != &other) {
+		size = other.size;
+		entityCount = other.entityCount;
+		entities = other.entities;
+	}
+	return *this;
+}
+
+
+/*
 *  @brief ランダムにフィールドを生成する
 *  @param size フィールドのサイズ
 *  @return ランダム生成されたフィールド
@@ -59,7 +83,6 @@ Field Field::fromJSON(const JSON& json) {
 Field Field::fromPath(const FilePath& path) {
 
 	const JSON json = JSON::Load(path);
-	Console << json;
 	if (json) {
 		return Field::fromJSON(json);
 	}
@@ -135,4 +158,48 @@ void Field::draw() const {
 	// フィールドの枠を描画
 	Rect(0, 0, size * 50, size * 50).drawFrame(2, Palette::Black);
 
+}
+
+
+/*
+* @brief フィールドのペアを数える
+* @return int32
+*/
+
+int32 Field::countPairs() const {
+	const int32 dx[4] = { 1, 0, -1, 0 };
+	const int32 dy[4] = { 0, 1, 0, -1 };
+	int32 res = 0;
+	Array<bool> seen(size * size / 2, false);
+	for (int32 i : step(size)) {
+		for (int32 j : step(size)) {
+			int32 cur = entities[i][j];
+			if (seen[cur]) {
+				continue;
+			}
+			for (int32 k : step(4)) {
+				int32 y = i + dy[k];
+				int32 x = j + dx[k];
+				if (x < 0 || size <= x || y < 0 || size <= y) {
+					continue;
+				}
+				int32 nxt = entities[y][x];
+				if (nxt != cur) continue;
+				seen[cur] = true;
+				res++;
+				break;
+			}
+
+		}
+	}
+	return res;
+}
+
+/*
+* @brief フィールドのサイズを取得
+* @return int32
+*/
+
+int32 Field::getSize() const {
+	return size;
 }
