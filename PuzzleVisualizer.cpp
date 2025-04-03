@@ -37,6 +37,8 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const Solution& so
 	m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, m_controlRect.y + 20, 80, 40);
 
 	m_showNumbersButton = Rect(m_controlRect.x + 300, m_controlRect.y + 20, 80, 40);
+	m_colorTileButton = Rect(m_controlRect.x + 300, m_controlRect.y + 70, 80, 40);
+
 
 	m_playerExitButton = Rect(m_controlRect.x + 400, m_controlRect.y + 20, 80, 40);
 
@@ -76,6 +78,7 @@ void PuzzleVisualizer::run()
 		m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, m_controlRect.y + 20, 80, 40);
 
 		m_showNumbersButton = Rect(m_controlRect.x + 300, m_controlRect.y + 20, 80, 40);
+		m_colorTileButton = Rect(m_controlRect.x + 300, m_controlRect.y + 70, 80, 40);
 
 		m_playerExitButton = Rect(m_controlRect.x + 400, m_controlRect.y + 20, 80, 40);
 
@@ -162,13 +165,22 @@ void PuzzleVisualizer::drawControls()
 		m_font(U"").drawAt(m_showNumbersButton.center(), ColorF(1.0));
 	}
 
+	// タイルの色変更ボタン
+	m_colorTileButton.drawFrame(2, 0, ColorF(1.0));
+	if (m_colorTile) {
+		m_font(U"Color").drawAt(m_colorTileButton.center(), ColorF(1.0));
+	}
+	else {
+		m_font(U"Gray").drawAt(m_colorTileButton.center(), ColorF(1.0));
+	}
+
 	// 情報表示
 	m_font(U"Step: {}/{}"_fmt(m_currentStep, m_operations.size())).draw(m_controlRect.x + 10, m_controlRect.y + 80, ColorF(1.0));
 	m_font(U"Speed: x{:.1f}"_fmt(m_playSpeed)).draw(m_controlRect.x + 10, m_controlRect.y + 110, ColorF(1.0));
 
 	// ペア数
 	int32_t pairs = m_currentField.countPairs();
-	int32_t totalPairs = (m_initialField.getSize() * m_initialField.getSize()) / 2 - 1;
+	int32_t totalPairs = (m_initialField.getSize() * m_initialField.getSize()) / 2;
 	m_font(U"Pairs: {}/{}"_fmt(pairs, totalPairs)).draw(m_controlRect.x + 10, m_controlRect.y + 140, ColorF(1.0));
 }
 
@@ -223,6 +235,12 @@ void PuzzleVisualizer::handleInput()
 	// 数字表示ボタン
 	if (m_showNumbersButton.leftClicked()) {
 		m_showNumbers ^= 1;
+		drawField();
+	}
+
+	// タイルの色変更ボタン
+	if (m_colorTileButton.leftClicked()) {
+		m_colorTile ^= 1;
 		drawField();
 	}
 }
@@ -293,8 +311,18 @@ void PuzzleVisualizer::drawField() const
 	// グリッドの描画
 	for (int y = 0; y < gridSize; ++y) {
 		for (int x = 0; x < gridSize; ++x) {
+			ColorF currentColor = colors[m_currentField.entities[y][x]];
+
+			// タイルの色を取得
+			if (m_colorTile) {
+				currentColor = colors[m_currentField.entities[y][x]];
+			}
+			else if (!m_currentField.isPair(x, y)) {
+				currentColor = ColorF(0.8, 0.8, 0.8);
+			}
+
 			Rect(m_fieldRect.x + x * cellSize, m_fieldRect.y + y * cellSize, cellSize, cellSize)
-				.draw(colors[m_currentField.entities[y][x]])
+				.draw(currentColor)
 				.drawFrame(1, 0, ColorF(0.8, 0.8, 0.8));
 			if (m_showNumbers) {
 				font(copysign(m_currentField.entities[y][x], 1)).drawAt(m_fieldRect.x + x * cellSize + cellSize / 2, m_fieldRect.y + y * cellSize + cellSize / 2, Palette::Black);

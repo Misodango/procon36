@@ -203,3 +203,27 @@ int32 Field::countPairs() const {
 int32 Field::getSize() const {
 	return size;
 }
+
+/*
+* @brief ペアのマスかどうかを判定
+* @param x x座標
+* @param y y座標
+* @return bool
+*/
+
+bool Field::isPair(int32 x, int32 y) const {
+	const int32 dx[4] = { 1, 0, -1, 0 };
+	const int32 dy[4] = { 0, 1, 0, -1 };
+	int32 cur = entities[y][x];
+	for (int32 k : step(4)) {
+		int32 ny = y + dy[k];
+		int32 nx = x + dx[k];
+		if (nx < 0 || size <= nx || ny < 0 || size <= ny) {
+			continue;
+		}
+		int32 nxt = entities[ny][nx];
+		if (nxt != cur) continue;
+		return true;
+	}
+	return false;
+}
