@@ -409,3 +409,101 @@ size_t Field::computeHash() const {
 	}
 	return hash;
 }
+
+/*
+* @brief フィールドの評価値を計算する（ビームサーチ用）
+* @return float 評価値（高いほど良い状態）
+*/
+
+float Field::evaluateState() const {
+	float score = 0.0f;
+
+	// 1. ペアの数を基本スコアとする（最も重要）
+	int32 pairCount = countPairs();
+	score += pairCount * 50.0f;
+
+	// 2. 左上からの連続ペアを高く評価
+	int32 consecutivePairsH = countPairsFromTopLeftHorizontal();
+	int32 consecutivePairsV = countPairsFromTopLeftVertical();
+	score += std::max(consecutivePairsH / size, consecutivePairsV / size) * 100.0f;
+
+	// 3. 各エンティティについて、ペアとなるもう一方への「回転距離」を評価
+	// 同じ数字の位置を記録する一時的なマップ
+	std::unordered_map<int32, std::vector<std::pair<int32, int32>>> entityPositions;
+
+	// 各エンティティの位置を記録
+	for (int32 y = 0; y < size; ++y) {
+		for (int32 x = 0; x < size; ++x) {
+			int32 entity = entities[y][x];
+			if (entity > 0) { // 0は空白なので無視
+				entityPositions[entity].push_back({ x, y });
+			}
+		}
+	}
+
+	// 各エンティティペアの「回転距離」を評価
+	for (const auto& [entity, positions] : entityPositions) {
+		// 同じ数字が2つあるはず（ペアになる条件）
+		if (positions.size() == 2) {
+			auto [x1, y1] = positions[0];
+			auto [x2, y2] = positions[1];
+
+			// 既にペアになっている場合はスコア加算（隣接している）
+			if (abs(x1 - x2) + abs(y1 - y2) == 1) {
+				score += 5.0f;
+				continue;
+			}
+
+			// 回転距離の計算：
+			// 1. マンハッタン距離の逆数をベースにする
+			int32 manhattanDist = abs(x1 - x2) + abs(y1 - y2);
+
+			// 2. 同じ行または同じ列にある場合は少し加点（1回の回転で近づける可能性が高い）
+			bool sameRow = (y1 == y2);
+			bool sameCol = (x1 == x2);
+
+			// 3. 対角線上にある場合も評価（L字の動きが必要）
+			bool diagonal = abs(x1 - x2) == abs(y1 - y2);
+
+			// マンハッタン距離が小さいほど良い（大きいほど悪い）
+			float distanceScore = 20.0f / (manhattanDist + 1.0f);
+
+			// 同じ行/列ボーナス
+			if (sameRow || sameCol) {
+				distanceScore += 5.0f;
+			}
+
+			// 対角線ボーナス（やや難しいがまだ扱いやすい）
+			if (diagonal) {
+				distanceScore += 2.0f;
+			}
+
+			// 必要な回転回数の推定（より大きなグリッドサイズは動かせる範囲が広いが、精密さは低い）
+			// マンハッタン距離を最小のグリッドサイズ（2）で割った値が必要回転回数の下限
+			int32 estimatedRotations = (manhattanDist + 1) / 2;
+			distanceScore -= estimatedRotations * 0.5f;
+
+			score += distanceScore;
+		}
+	}
+
+	// 4. ペアになる可能性が高い配置パターンを評価
+	for (int32 y = 0; y < size - 1; ++y) {
+		for (int32 x = 0; x < size - 1; ++x) {
+			// 2x2の範囲内で同じ数字がある場合（回転しやすい）
+			std::unordered_set<int32> entitiesIn2x2;
+			for (int32 dy = 0; dy < 2; ++dy) {
+				for (int32 dx = 0; dx < 2; ++dx) {
+					entitiesIn2x2.insert(entities[y + dy][x + dx]);
+				}
+			}
+
+			// 2x2内の重複を評価（同じ数字が複数ある＝ペアになりやすい）
+			if (entitiesIn2x2.size() < 4) {
+				score += (4 - entitiesIn2x2.size()) * 2.0f;
+			}
+		}
+	}
+
+	return score;
+}

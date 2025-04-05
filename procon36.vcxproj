@@ -116,6 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Algorithm.cpp" />
+    <ClCompile Include="BeamSearchAlgorithm.cpp" />
     <ClCompile Include="BFSAlgorithm.cpp" />
     <ClCompile Include="Field.cpp" />
     <ClCompile Include="GreedyAlgorithm.cpp" />
@@ -335,6 +336,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Algorithm.h" />
+    <ClInclude Include="BeamSearchAlgorithm.h" />
     <ClInclude Include="BFSAlgorithm.h" />
     <ClInclude Include="Field.h" />
     <ClInclude Include="GreedyAlgorithm.h" />
