@@ -116,7 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Algorithm.cpp" />
-    <ClCompile Include="DFSAlgorithm.cpp" />
+    <ClCompile Include="BFSAlgorithm.cpp" />
     <ClCompile Include="Field.cpp" />
     <ClCompile Include="GreedyAlgorithm.cpp" />
     <ClCompile Include="JsonParser.cpp" />
@@ -335,7 +335,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Algorithm.h" />
-    <ClInclude Include="DFSAlgorithm.h" />
+    <ClInclude Include="BFSAlgorithm.h" />
     <ClInclude Include="Field.h" />
     <ClInclude Include="GreedyAlgorithm.h" />
     <ClInclude Include="JsonParser.h" />

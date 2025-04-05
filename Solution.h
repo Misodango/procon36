@@ -13,7 +13,7 @@ struct Solution
 	enum class Type
 	{
 		Greedy,
-		DFS,
+		BFS,
 		// 他のアルゴリズムの種類を追加
 	};
 
@@ -31,4 +31,7 @@ struct Solution
 
 	// 操作を取得
 	void getOperation(int32 index, int32& x, int32& y, int32& size) const;
+
+	// 解答用JSONから変換
+	static Solution fromJSON(const JSON& json);
 };

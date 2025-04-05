@@ -2,11 +2,11 @@
 #include "Field.h"
 #include "Solution.h"
 
-class DFSAlgorithm
+class BFSAlgorithm
 {
 public:
 	// DFSAlgorithmのコンストラクタ
-	DFSAlgorithm(const Field& field);
+	BFSAlgorithm(const Field& field);
 
 	// DFSAlgorithmの実行
 	Solution run();

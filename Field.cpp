@@ -395,3 +395,17 @@ bool Field::isPairDown(int32 x, int32 y) const {
 	return (y + 1 < size && entities[y][x] == entities[y + 1][x]);
 }
 
+/*
+* @brief フィールドをハッシュ値に変換
+* @return size_t
+*/
+
+size_t Field::computeHash() const {
+	size_t hash = 0;
+	for (int32 y : step(size)) {
+		for (int32 x : step(size)) {
+			hash ^= std::hash<int32>()(entities[y][x]) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		}
+	}
+	return hash;
+}

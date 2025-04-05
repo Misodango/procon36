@@ -32,14 +32,17 @@ void Main()
 
 	// solve
 	Algorithm algorithm(field);
-	Solution solution = algorithm.run(Solution::Type::DFS);
+	AsyncTask<Solution> solutionTask;
 	
-	PuzzleVisualizer visualizer(field, solution);
-	visualizer.run();
-	while (System::Update())
-	{
+	while (System::Update()) {
 
+		if (SimpleGUI::Button(U"Solve", Vec2(700, 300), unspecified, (not solutionTask.isValid()))) {
+			solutionTask = algorithm.runAsync(Solution::Type::BFS);
+		}
+
+		if (solutionTask.isReady()) {
+			PuzzleVisualizer visualizer(field, solutionTask.get());
+			visualizer.run();
+		}
 	}
-
-
 }

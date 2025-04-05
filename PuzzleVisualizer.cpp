@@ -39,8 +39,7 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const Solution& so
 	m_showNumbersButton = Rect(m_controlRect.x + 300, m_controlRect.y + 20, 80, 40);
 	m_colorTileButton = Rect(m_controlRect.x + 300, m_controlRect.y + 70, 80, 40);
 
-
-	m_playerExitButton = Rect(m_controlRect.x + 400, m_controlRect.y + 20, 80, 40);
+	m_closeButton = Rect(m_controlRect.x + 300, m_controlRect.y + 120, 80, 40);
 
 	// 操作の取得
 	for (int i = 0; i < solution.getOperationCount(); i++) {
@@ -51,8 +50,15 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const Solution& so
 }
 
 /*
-* @brief PuzzleVisualizerの実行
+* @brief PuzzleVisualizerのコンストラクタ
+* @param initialField 初期フィールド
+* @param asyncSolution 非同期解答
+* @return PuzzleVisualizer
 */
+
+PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const AsyncTask<Solution>& solution) {
+
+}
 
 void PuzzleVisualizer::run()
 {
@@ -80,7 +86,7 @@ void PuzzleVisualizer::run()
 		m_showNumbersButton = Rect(m_controlRect.x + 300, m_controlRect.y + 20, 80, 40);
 		m_colorTileButton = Rect(m_controlRect.x + 300, m_controlRect.y + 70, 80, 40);
 
-		m_playerExitButton = Rect(m_controlRect.x + 400, m_controlRect.y + 20, 80, 40);
+		m_closeButton = Rect(m_controlRect.x + 300, m_controlRect.y + 120, 80, 40);
 
 		// 入力処理
 		handleInput();
@@ -174,6 +180,10 @@ void PuzzleVisualizer::drawControls()
 		m_font(U"Gray").drawAt(m_colorTileButton.center(), ColorF(1.0));
 	}
 
+	// 閉じるボタン
+	m_closeButton.drawFrame(2, 0, ColorF(1.0));
+	m_font(U"Close").drawAt(m_closeButton.center(), ColorF(1.0));
+
 	// 情報表示
 	m_font(U"Step: {}/{}"_fmt(m_currentStep, m_operations.size())).draw(m_controlRect.x + 10, m_controlRect.y + 80, ColorF(1.0));
 	m_font(U"Speed: x{:.1f}"_fmt(m_playSpeed)).draw(m_controlRect.x + 10, m_controlRect.y + 110, ColorF(1.0));
@@ -198,8 +208,11 @@ void PuzzleVisualizer::handleInput()
 	}
 
 	// 再生・一時停止ボタン
-	if (m_isPlaying ? m_pauseButton.leftClicked() : m_playButton.leftClicked()) {
+	if (m_isPlaying ?
+		m_pauseButton.leftClicked() || KeySpace.up() :
+		m_playButton.leftClicked() || KeySpace.up()) {
 		m_isPlaying = !m_isPlaying;
+		m_currentStep %= m_operations.size();
 	}
 
 	// リセットボタン
@@ -211,14 +224,15 @@ void PuzzleVisualizer::handleInput()
 	}
 
 	// 次へボタン
-	if (m_nextButton.leftClicked() && m_currentStep < m_operations.size()) {
+	if (m_nextButton.leftClicked() || KeyRight.up() && m_currentStep < m_operations.size()) {
 		m_currentStep++;
 		updateFieldToCurrentStep();
 		m_sliderValue = m_currentStep;
 	}
 
 	// 前へボタン
-	if (m_prevButton.leftClicked() && m_currentStep > 0) {
+	if (m_prevButton.leftClicked() || KeyLeft.up()
+		&& m_currentStep > 0) {
 		m_currentStep--;
 		updateFieldToCurrentStep();
 		m_sliderValue = m_currentStep;
@@ -243,6 +257,11 @@ void PuzzleVisualizer::handleInput()
 	if (m_colorTileButton.leftClicked()) {
 		m_colorTile ^= 1;
 		drawField();
+	}
+
+	// 閉じるボタン
+	if (m_closeButton.leftClicked()) {
+		exit(0);
 	}
 }
 
@@ -324,7 +343,7 @@ void PuzzleVisualizer::drawField() const
 
 			Rect(m_fieldRect.x + x * cellSize, m_fieldRect.y + y * cellSize, cellSize, cellSize)
 				.draw(currentColor)
-				.drawFrame(1, 0, ColorF(0.8, 0.8, 0.8));
+				.drawFrame(1, 0, ColorF(1, 1, 1));
 			if (m_showNumbers) {
 				font(copysign(m_currentField.entities[y][x], 1)).drawAt(m_fieldRect.x + x * cellSize + cellSize / 2, m_fieldRect.y + y * cellSize + cellSize / 2, Palette::Black);
 			}

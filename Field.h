@@ -85,5 +85,8 @@ public:
 	// 終了判定
 	bool isFinished() const;
 
+	// フィールドをハッシュ値に変換
+	size_t computeHash() const;
+
 	Field() = default;
 };

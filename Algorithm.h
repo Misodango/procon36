@@ -11,6 +11,10 @@ public:
 	// Algorithmの実行
 	Solution run(const Solution::Type type);
 
+	// Argorithmの非同期実行
+	AsyncTask<Solution> runAsync(const Solution::Type type);
+
+
 private:
 	Field m_field;
 };

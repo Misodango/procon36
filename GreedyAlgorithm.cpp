@@ -1,4 +1,5 @@
 ﻿#include "GreedyAlgorithm.h"
+#include <Siv3D.hpp>
 
 /*
 * @brief GreedyAlgorithmのコンストラクタ
@@ -101,4 +102,3 @@ Solution GreedyAlgorithm::run()
 
 	return solution;
 }
-

@@ -165,7 +165,7 @@
     <ClCompile Include="PuzzleVisualizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DFSAlgorithm.cpp">
+    <ClCompile Include="BFSAlgorithm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -855,7 +855,7 @@
     <ClInclude Include="PuzzleVisualizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DFSAlgorithm.h">
+    <ClInclude Include="BFSAlgorithm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
