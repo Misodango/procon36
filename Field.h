@@ -81,9 +81,11 @@ public:
 	// 自信が上のペアか判定
 	bool isPairUp(int32 x, int32 y) const;
 
-
 	// 終了判定
 	bool isFinished() const;
+
+	// フィールドの評価値を計算する（ビームサーチ用）
+	float evaluateState() const;
 
 	// フィールドをハッシュ値に変換
 	size_t computeHash() const;

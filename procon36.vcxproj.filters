@@ -168,6 +168,9 @@
     <ClCompile Include="BFSAlgorithm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BeamSearchAlgorithm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -856,6 +859,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BFSAlgorithm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BeamSearchAlgorithm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

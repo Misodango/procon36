@@ -1,6 +1,7 @@
 ﻿#include "Algorithm.h"
 #include "GreedyAlgorithm.h"
 #include "BFSAlgorithm.h"
+#include "BeamSearchAlgorithm.h"
 #include "Solution.h"
 #include "Field.h"
 
@@ -34,6 +35,12 @@ Solution Algorithm::run(const Solution::Type type)
 	{
 		BFSAlgorithm bfsAlgorithm(m_field);
 		solution = bfsAlgorithm.run();
+		break;
+	}
+	case Solution::Type::BeamSearch:
+	{
+		BeamSearchAlgorithm beamSearchAlgorithm(m_field);
+		solution = beamSearchAlgorithm.run();
 		break;
 	}
 	default:

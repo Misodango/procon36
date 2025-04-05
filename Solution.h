@@ -14,6 +14,7 @@ struct Solution
 	{
 		Greedy,
 		BFS,
+		BeamSearch,
 		// 他のアルゴリズムの種類を追加
 	};
 
