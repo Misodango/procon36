@@ -11,6 +11,7 @@ private:
 	Field m_initialField;
 	Field m_currentField;
 	Solution m_solution;
+	AsyncTask<Solution> m_asyncSolution;
 	Array<Operation> m_operations;
 	int32 m_currentStep = 0;
 	bool m_isPlaying = false;
@@ -32,7 +33,7 @@ private:
 	Rect m_speedUpButton, m_speedDownButton;
 	Rect m_showNumbersButton;
 	Rect m_colorTileButton;
-	Rect m_playerExitButton;
+	Rect m_closeButton;
 
 	// フォント
 	Font m_font;
@@ -54,6 +55,8 @@ private:
 
 public:
 	PuzzleVisualizer(const Field& initialField, const Solution& solution);
+
+	PuzzleVisualizer(const Field& initialField, const AsyncTask<Solution>& asyncSolution);
 
 	void run();
 };

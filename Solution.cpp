@@ -44,3 +44,15 @@ void Solution::getOperation(int32 index, int32& x, int32& y, int32& size) const 
 	y = ops[index].y;
 	size = ops[index].n;
 }
+
+
+/*
+* @brief JSONから解答を生成する
+* @param json JSONオブジェクト
+* @return 解答
+*/
+Solution Solution::fromJSON(const JSON& json) {
+	Solution solution;
+	
+	return solution;
+}

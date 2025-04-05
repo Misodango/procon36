@@ -1,5 +1,6 @@
 ﻿#include "Algorithm.h"
 #include "GreedyAlgorithm.h"
+#include "BFSAlgorithm.h"
 #include "Solution.h"
 #include "Field.h"
 
@@ -29,9 +30,29 @@ Solution Algorithm::run(const Solution::Type type)
 		solution = greedyAlgorithm.run();
 		break;
 	}
+	case Solution::Type::BFS:
+	{
+		BFSAlgorithm bfsAlgorithm(m_field);
+		solution = bfsAlgorithm.run();
+		break;
+	}
 	default:
 		break;
 	}
 	
 	return solution;
+}
+
+
+/*
+* @brief Algorithmの非同期実行
+* @param type 解法の種類
+* @return AsyncTask<Solution>
+*/
+
+AsyncTask<Solution> Algorithm::runAsync(const Solution::Type type)
+{
+	return AsyncTask<Solution>([this, type]() {
+		return run(type);
+	});
 }

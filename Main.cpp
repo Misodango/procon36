@@ -27,19 +27,22 @@ void Main()
 	const FilePath path = FileSystem::FullPath(U"input.json");
 	// JSON パーサーの生成
 	// Field field = Field::fromPath(path);
-	Field field = Field::random(24);
+	Field field = Field::random(4);
 	bool isField = true;
 
 	// solve
 	Algorithm algorithm(field);
-	// Solution solution = algorithm.run(Solution::Type::Greedy);
-	Solution solution;
-	PuzzleVisualizer visualizer(field, solution);
-	visualizer.run();
-	while (System::Update())
-	{
+	AsyncTask<Solution> solutionTask;
+	
+	while (System::Update()) {
 
+		if (SimpleGUI::Button(U"Solve", Vec2(700, 300), unspecified, (not solutionTask.isValid()))) {
+			solutionTask = algorithm.runAsync(Solution::Type::BFS);
+		}
+
+		if (solutionTask.isReady()) {
+			PuzzleVisualizer visualizer(field, solutionTask.get());
+			visualizer.run();
+		}
 	}
-
-
 }

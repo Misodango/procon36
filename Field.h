@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <Siv3D.hpp> // 必要なヘッダファイルをインクルード
+#include "Solution.h"
 
 class Field {
 public:
@@ -41,11 +42,51 @@ public:
 	// フィールドのペアを数える
 	int32 countPairs() const;
 
+	// 左上から連続のペアを数える
+	int32 countPairsFromTopLeftHorizontal() const;
+
+	// 左上から連続のペアを数える
+	int32 countPairsFromTopLeftVertical() const;
+
 	// フィールドのサイズを取得
 	int32 getSize() const;
 
+	// 合法手を取得
+	Array<Solution> getLegalMoves() const;
+
 	// ペアのマスかどうかを判定
 	bool isPair(int32 x, int32 y) const;
+
+	// 右にペアがあるか判定
+	bool hasPairRight(int32 x, int32 y) const;
+
+	// 左にペアがあるか判定
+	bool hasPairLeft(int32 x, int32 y) const;
+
+	// 下にペアがあるか判定
+	bool hasPairDown(int32 x, int32 y) const;
+
+	// 上にペアがあるか判定
+	bool hasPairUp(int32 x, int32 y) const;
+
+	// 自信が右のペアか判定
+	bool isPairRight(int32 x, int32 y) const;
+
+	// 自信が左のペアか判定
+	bool isPairLeft(int32 x, int32 y) const;
+
+	// 自信が下のペアか判定
+	bool isPairDown(int32 x, int32 y) const;
+
+	// 自信が上のペアか判定
+	bool isPairUp(int32 x, int32 y) const;
+
+
+	// 終了判定
+	bool isFinished() const;
+
+	// フィールドをハッシュ値に変換
+	size_t computeHash() const;
 
 	Field() = default;
 };

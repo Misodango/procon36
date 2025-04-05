@@ -1,4 +1,5 @@
 ﻿#include "GreedyAlgorithm.h"
+#include <Siv3D.hpp>
 
 /*
 * @brief GreedyAlgorithmのコンストラクタ
@@ -24,6 +25,7 @@ Solution GreedyAlgorithm::run()
 
 	// 改善が見られなくなるまで繰り返す
 	bool improved = true;
+	bool isFinished = false;
 	while (improved) {
 		improved = false;
 
@@ -43,12 +45,13 @@ Solution GreedyAlgorithm::run()
 				for (int y = 0; y <= fieldSize - size; y++) {
 					// 現在のフィールドをコピー
 					Field tempField = currentField;
-
+					if (tempField.isPair(x, y)) continue;
 					// 部分グリッドを回転
 					tempField.rotate(x, y, size);
 
 					// 回転後のペア数を計算
-					int32_t newPairCount = tempField.countPairs();
+					int32 succsessivePairs = tempField.countPairsFromTopLeftHorizontal() + tempField.countPairsFromTopLeftVertical();
+					int32_t newPairCount = succsessivePairs;
 
 					// ペアの増加量を計算
 					int gain = newPairCount - currentPairCount;
@@ -74,10 +77,27 @@ Solution GreedyAlgorithm::run()
 			solution.add({ bestX, bestY, bestSize });
 
 			// すべてのペアが隣接していれば終了
-			if (currentPairCount == (fieldSize * fieldSize) / 2 - 1) {
+			if (currentField.isFinished()) {
+				isFinished = true;
 				break;
 			}
 		}
+		//// ランダムな点に導きを適用
+		//else {
+		//	// ランダムな点を選択
+		//	int x = Random(fieldSize - 1);
+		//	int y = Random(fieldSize - 1);
+		//	int size = Random(2, fieldSize - Max(x, y) + 1);
+		//	// フィールドを回転
+		//	currentField.rotate(x, y, size);
+		//	solution.add({ x, y, size });
+		//	improved = true;
+		//	// ランダムな確率で終了(焼きなまし)
+		//	if (Random(0.0, 1.0) < 0.8) {
+		//		improved = false;
+		//		break;
+		//	}
+		//}
 	}
 
 	return solution;
