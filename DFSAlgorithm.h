@@ -2,13 +2,13 @@
 #include "Field.h"
 #include "Solution.h"
 
-class GreedyAlgorithm
+class DFSAlgorithm
 {
 public:
-	// GreedyAlgorithmのコンストラクタ
-	GreedyAlgorithm(const Field& field);
+	// DFSAlgorithmのコンストラクタ
+	DFSAlgorithm(const Field& field);
 
-	// GreedyAlgorithmの実行
+	// DFSAlgorithmの実行
 	Solution run();
 
 private:

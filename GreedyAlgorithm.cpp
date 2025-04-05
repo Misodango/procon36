@@ -102,21 +102,3 @@ Solution GreedyAlgorithm::run()
 	return solution;
 }
 
-/*
-* @brief 先読みDFS
-* @param depth 深さ
-* @return Solution
-*/
-
-Solution GreedyAlgorithm::runDFS(int32 depth)
-{
-	Solution solution;
-	Field currentField = m_field;
-	// 現在のペア数
-	int32_t currentPairCount = currentField.countPairs();
-	// 改善が見られなくなるまで繰り返す
-	bool improved = true;
-
-	return solution;
-}
-

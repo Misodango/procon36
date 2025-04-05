@@ -13,6 +13,7 @@ struct Solution
 	enum class Type
 	{
 		Greedy,
+		DFS,
 		// 他のアルゴリズムの種類を追加
 	};
 

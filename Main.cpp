@@ -32,7 +32,7 @@ void Main()
 
 	// solve
 	Algorithm algorithm(field);
-	Solution solution = algorithm.run(Solution::Type::Greedy);
+	Solution solution = algorithm.run(Solution::Type::DFS);
 	
 	PuzzleVisualizer visualizer(field, solution);
 	visualizer.run();

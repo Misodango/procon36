@@ -1,5 +1,6 @@
 ﻿#include "Algorithm.h"
 #include "GreedyAlgorithm.h"
+#include "DFSAlgorithm.h"
 #include "Solution.h"
 #include "Field.h"
 
@@ -27,6 +28,12 @@ Solution Algorithm::run(const Solution::Type type)
 	{
 		GreedyAlgorithm greedyAlgorithm(m_field);
 		solution = greedyAlgorithm.run();
+		break;
+	}
+	case Solution::Type::DFS:
+	{
+		DFSAlgorithm dfsAlgorithm(m_field);
+		solution = dfsAlgorithm.run();
 		break;
 	}
 	default:
