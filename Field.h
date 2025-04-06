@@ -48,6 +48,9 @@ public:
 	// 左上から連続のペアを数える
 	int32 countPairsFromTopLeftVertical() const;
 
+	// 差分更新
+	std::pair<int32, float> rotateAndGetDiff(int32 x, int32 y, int32 n);
+
 	// フィールドのサイズを取得
 	int32 getSize() const;
 
