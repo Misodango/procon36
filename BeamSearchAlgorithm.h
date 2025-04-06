@@ -25,7 +25,7 @@ private:
 	};
 
 public:
-	BeamSearchAlgorithm(const Field& field, int32 beamWidth = 50, int32 maxDepth = 70)
+	BeamSearchAlgorithm(const Field& field, int32 beamWidth = 1000, int32 maxDepth = 100)
 		: m_field(field), m_beamWidth(beamWidth), m_maxDepth(maxDepth) {
 	}
 

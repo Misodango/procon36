@@ -48,7 +48,11 @@ Solution BeamSearchAlgorithm::run() {
 
 						// フィールドをコピーして回転
 						Field nextField = current.field;
-						nextField.rotate(x, y, size);
+						// nextField.rotate(x, y, size);
+						auto [pairDiff, scoreDiff] = nextField.rotateAndGetDiff(x, y, size);
+
+						int32 newPairCount = current.field.countPairs() + pairDiff;
+						float newScore = current.score + scoreDiff;
 
 						// ハッシュ値を計算
 						size_t hash = nextField.computeHash();
@@ -62,10 +66,10 @@ Solution BeamSearchAlgorithm::run() {
 							nextSolution.add({ x, y, size });
 
 							// 状態を評価
-							float score = nextField.evaluateState();
+							// float score = nextField.evaluateState();
 
 							// 次のビームに追加
-							nextBeam.push({ nextField, nextSolution, score, depth + 1 });
+							nextBeam.push({ nextField, nextSolution, newScore, depth + 1 });
 						}
 					}
 				}
@@ -90,6 +94,6 @@ Solution BeamSearchAlgorithm::run() {
 		}
 		currentBeam = limitedBeam;
 	}
-	Print << U"{}ms"_fmt(stopwatch.ms());
+	Print << U"not finished {}ms"_fmt(stopwatch.ms());
 	return bestSolution;
 }

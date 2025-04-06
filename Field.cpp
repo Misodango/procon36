@@ -212,19 +212,16 @@ int32 Field::getSize() const {
 */
 
 bool Field::isPair(int32 x, int32 y) const {
-	const int32 dx[4] = { 1, 0, -1, 0 };
-	const int32 dy[4] = { 0, 1, 0, -1 };
-	int32 cur = entities[y][x];
-	for (int32 k : step(4)) {
-		int32 ny = y + dy[k];
-		int32 nx = x + dx[k];
-		if (nx < 0 || size <= nx || ny < 0 || size <= ny) {
-			continue;
-		}
-		int32 nxt = entities[ny][nx];
-		if (nxt != cur) continue;
-		return true;
-	}
+	const int32 entity = entities[y][x];
+
+	if (x + 1 < size && entities[y][x + 1] == entity) return true;
+
+	if (y + 1 < size && entities[y + 1][x] == entity) return true;
+
+	if (x - 1 >= 0 && entities[y][x - 1] == entity) return true;
+
+	if (y - 1 >= 0 && entities[y - 1][x] == entity) return true;
+
 	return false;
 }
 
@@ -279,6 +276,58 @@ int32 Field::countPairsFromTopLeftVertical() const {
 		}
 	}
 	return res;
+}
+
+/*
+* @brief 差分更新
+* @param x x座標
+* @param y y座標
+* @param n サイズ
+*/
+
+std::pair<int32, float> Field::rotateAndGetDiff(int32 x, int32 y, int32 n) {
+	// 回転前の適用領域と周囲のペアをカウント
+	int32 beforePairs = 0;
+	float beforeScore = 0;
+
+	// The area affected is the rotation area plus a 1-cell border around it
+	const int32 checkStartX = std::max(0, x - 1);
+	const int32 checkStartY = std::max(0, y - 1);
+	const int32 checkEndX = std::min(size, x + n + 1);
+	const int32 checkEndY = std::min(size, y + n + 1);
+	Array<bool> seen(size * size / 2, false);
+	// Count pairs before rotation
+	for (int32 cy = checkStartY; cy < checkEndY; ++cy) {
+		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
+			if (!seen[entities[cy][cx]] && isPair(cx, cy)) {
+				beforePairs++;
+				beforeScore += 5.0f;  // Same scoring as in evaluateState
+				seen[entities[cy][cx]] = true;
+			}
+		}
+	}
+
+	// Perform the actual rotation
+	rotate(x, y, n);
+
+	// seenのリセット
+	seen.fill(false);
+
+	// Count pairs after rotation in the same area
+	int32 afterPairs = 0;
+	float afterScore = 0;
+	for (int32 cy = checkStartY; cy < checkEndY; ++cy) {
+		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
+			if (!seen[entities[cy][cx]] && isPair(cx, cy)) {
+				afterPairs++;
+				afterScore += 5.0f;
+				seen[entities[cy][cx]] = true;
+			}
+		}
+	}
+
+	// Return the difference
+	return { afterPairs - beforePairs, afterScore - beforeScore };
 }
 
 /*
@@ -416,16 +465,17 @@ size_t Field::computeHash() const {
 */
 
 float Field::evaluateState() const {
+
 	float score = 0.0f;
 
 	// 1. ペアの数を基本スコアとする（最も重要）
 	int32 pairCount = countPairs();
-	score += pairCount * 50.0f;
+	score += pairCount * 100.0f;
 
 	// 2. 左上からの連続ペアを高く評価
 	int32 consecutivePairsH = countPairsFromTopLeftHorizontal();
 	int32 consecutivePairsV = countPairsFromTopLeftVertical();
-	score += std::max(consecutivePairsH / size, consecutivePairsV / size) * 100.0f;
+	score += std::max(consecutivePairsH, consecutivePairsV) * 50.0f;
 
 	// 3. 各エンティティについて、ペアとなるもう一方への「回転距離」を評価
 	// 同じ数字の位置を記録する一時的なマップ
@@ -507,3 +557,4 @@ float Field::evaluateState() const {
 
 	return score;
 }
+
