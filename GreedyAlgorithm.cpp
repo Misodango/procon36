@@ -46,15 +46,9 @@ Solution GreedyAlgorithm::run()
 					// 現在のフィールドをコピー
 					Field tempField = currentField;
 					if (tempField.isPair(x, y)) continue;
-					// 部分グリッドを回転
-					tempField.rotate(x, y, size);
+					// 部分グリッドを回転・差分更新
+					auto [gain, scoreDiff] = tempField.rotateAndGetDiff(x, y, size);
 
-					// 回転後のペア数を計算
-					int32 succsessivePairs = tempField.countPairsFromTopLeftHorizontal() + tempField.countPairsFromTopLeftVertical();
-					int32_t newPairCount = succsessivePairs;
-
-					// ペアの増加量を計算
-					int gain = newPairCount - currentPairCount;
 
 					// より良い操作が見つかった場合、情報を更新
 					if (gain > bestGain) {

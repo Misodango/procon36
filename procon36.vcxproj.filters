@@ -171,6 +171,9 @@
     <ClCompile Include="BeamSearchAlgorithm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SimulatedAnnealingAlgorithm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -862,6 +865,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BeamSearchAlgorithm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulatedAnnealingAlgorithm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

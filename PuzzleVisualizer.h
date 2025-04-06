@@ -59,4 +59,7 @@ public:
 	PuzzleVisualizer(const Field& initialField, const AsyncTask<Solution>& asyncSolution);
 
 	void run();
+
+	// 描画のみ（更新などなし）
+	void draw() const;
 };
