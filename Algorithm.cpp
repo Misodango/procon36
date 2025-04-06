@@ -1,9 +1,13 @@
 ﻿#include "Algorithm.h"
+#include "Solution.h"
+#include "Field.h"
+
+// 使用するアルゴリズムのヘッダファイル
 #include "GreedyAlgorithm.h"
 #include "BFSAlgorithm.h"
 #include "BeamSearchAlgorithm.h"
-#include "Solution.h"
-#include "Field.h"
+#include "SimulatedAnnealingAlgorithm.h"
+
 
 /*
 * @brief Algorithmのコンストラクタ
@@ -41,6 +45,12 @@ Solution Algorithm::run(const Solution::Type type)
 	{
 		BeamSearchAlgorithm beamSearchAlgorithm(m_field);
 		solution = beamSearchAlgorithm.run();
+		break;
+	}
+	case Solution::Type::SimulatedAnnealing:
+	{
+		SimulatedAnnealingAlgorithm simulatedAnnealingAlgorithm(m_field);
+		solution = simulatedAnnealingAlgorithm.run();
 		break;
 	}
 	default:

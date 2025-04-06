@@ -1,5 +1,4 @@
-﻿# include <Siv3D.hpp> // Siv3D v0.6.15
-# include "NetworkManager.h"
+﻿# include <Siv3D.hpp>
 # include "Field.h"
 # include "Algorithm.h"
 # include "PuzzleVisualizer.h"
@@ -27,22 +26,26 @@ void Main()
 	const FilePath path = FileSystem::FullPath(U"input.json");
 	// JSON パーサーの生成
 	// Field field = Field::fromPath(path);
-	Field field = Field::random(10);
+	Field field = Field::random(16);
 	bool isField = true;
 
 	// solve
 	Algorithm algorithm(field);
 	AsyncTask<Solution> solutionTask;
-	
+
 	while (System::Update()) {
 
-		if (SimpleGUI::Button(U"Solve", Vec2(700, 300), unspecified, (not solutionTask.isValid()))) {
+		if (SimpleGUI::Button(U"Solve", Vec2(1000, 1000), unspecified, (not solutionTask.isValid()))) {
 			solutionTask = algorithm.runAsync(Solution::Type::BeamSearch);
 		}
 
 		if (solutionTask.isReady()) {
 			PuzzleVisualizer visualizer(field, solutionTask.get());
 			visualizer.run();
+		}
+		else {
+			static PuzzleVisualizer visualizer(field, Solution());
+			visualizer.draw();
 		}
 	}
 }

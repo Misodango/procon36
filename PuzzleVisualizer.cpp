@@ -60,6 +60,11 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const AsyncTask<So
 
 }
 
+/*
+* @brief PuzzleVisualizerの実行
+* @return void
+*/
+
 void PuzzleVisualizer::run()
 {
 	while (System::Update())
@@ -109,6 +114,16 @@ void PuzzleVisualizer::run()
 		drawControls();
 	}
 }
+
+/*
+* @brief 盤面の描画
+*/
+
+void PuzzleVisualizer::draw()const{
+	// フィールドの描画
+	drawField();
+}
+
 
 /*
 * @brief PuzzleVisualizerの描画
@@ -353,4 +368,3 @@ void PuzzleVisualizer::drawField() const
 	// フィールドの枠を描画
 	m_fieldRect.drawFrame(2, Palette::Black);
 }
-

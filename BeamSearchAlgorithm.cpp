@@ -48,7 +48,7 @@ Solution BeamSearchAlgorithm::run() {
 
 						// フィールドをコピーして回転
 						Field nextField = current.field;
-						// nextField.rotate(x, y, size);
+						
 						auto [pairDiff, scoreDiff] = nextField.rotateAndGetDiff(x, y, size);
 
 						int32 newPairCount = current.field.countPairs() + pairDiff;

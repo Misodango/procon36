@@ -15,6 +15,7 @@ struct Solution
 		Greedy,
 		BFS,
 		BeamSearch,
+		SimulatedAnnealing,
 		// 他のアルゴリズムの種類を追加
 	};
 
