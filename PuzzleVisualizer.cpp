@@ -119,7 +119,7 @@ void PuzzleVisualizer::run()
 * @brief 盤面の描画
 */
 
-void PuzzleVisualizer::draw()const{
+void PuzzleVisualizer::draw()const {
 	// フィールドの描画
 	drawField();
 }
@@ -227,7 +227,7 @@ void PuzzleVisualizer::handleInput()
 		m_pauseButton.leftClicked() || KeySpace.up() :
 		m_playButton.leftClicked() || KeySpace.up()) {
 		m_isPlaying = !m_isPlaying;
-		m_currentStep %= m_operations.size();
+		m_currentStep %= std::max(m_operations.size(), size_t(1));
 	}
 
 	// リセットボタン

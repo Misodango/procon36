@@ -7,6 +7,7 @@
 #include "BFSAlgorithm.h"
 #include "BeamSearchAlgorithm.h"
 #include "SimulatedAnnealingAlgorithm.h"
+#include "DivideAndConquerBeamSearch.h"
 
 
 /*
@@ -51,6 +52,12 @@ Solution Algorithm::run(const Solution::Type type)
 	{
 		SimulatedAnnealingAlgorithm simulatedAnnealingAlgorithm(m_field);
 		solution = simulatedAnnealingAlgorithm.run();
+		break;
+	}
+	case Solution::Type::DivideAndConquerBeamSearch:
+	{
+		DivideAndConquerBeamSearch divideAndConquerBeamSearch(m_field);
+		solution = divideAndConquerBeamSearch.run();
 		break;
 	}
 	default:

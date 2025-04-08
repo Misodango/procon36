@@ -16,6 +16,7 @@ struct Solution
 		BFS,
 		BeamSearch,
 		SimulatedAnnealing,
+		DivideAndConquerBeamSearch,
 		// 他のアルゴリズムの種類を追加
 	};
 
@@ -27,6 +28,15 @@ struct Solution
 
 	// 操作を追加
 	void add(Operation operation);
+
+	// 別の解とマージ
+	void merge(const Solution& other);
+
+	// 操作にアクセス
+	const Operation& operator[](int32 index) const;
+
+	// 全ての操作を取得
+	const Array<Operation>& getOperations() const;
 
 	// 操作の数を取得
 	int32 getOperationCount() const;

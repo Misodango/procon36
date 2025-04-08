@@ -22,6 +22,26 @@ void Solution::add(Operation operation) {
 }
 
 /*
+* @brief 別の解とマージ
+* @param other 別の解
+* @return void
+*/
+
+void Solution::merge(const Solution& other) {
+	ops.insert(ops.end(), other.ops.begin(), other.ops.end());
+}
+
+/*
+* @brief 操作にアクセス
+* @param index インデックス
+* @return 操作
+*/
+
+const Operation& Solution::operator[](int32 index) const {
+	return ops[index];
+}
+
+/*
 * @brief 操作の数を取得
 * @return 操作の数
 */
@@ -45,7 +65,6 @@ void Solution::getOperation(int32 index, int32& x, int32& y, int32& size) const 
 	size = ops[index].n;
 }
 
-
 /*
 * @brief JSONから解答を生成する
 * @param json JSONオブジェクト
@@ -56,3 +75,4 @@ Solution Solution::fromJSON(const JSON& json) {
 	
 	return solution;
 }
+

@@ -118,6 +118,7 @@
     <ClCompile Include="Algorithm.cpp" />
     <ClCompile Include="BeamSearchAlgorithm.cpp" />
     <ClCompile Include="BFSAlgorithm.cpp" />
+    <ClCompile Include="DivideAndConquerBeamSearch.cpp" />
     <ClCompile Include="Field.cpp" />
     <ClCompile Include="GreedyAlgorithm.cpp" />
     <ClCompile Include="JsonParser.cpp" />
@@ -339,6 +340,7 @@
     <ClInclude Include="Algorithm.h" />
     <ClInclude Include="BeamSearchAlgorithm.h" />
     <ClInclude Include="BFSAlgorithm.h" />
+    <ClInclude Include="DivideAndConquerBeamSearch.h" />
     <ClInclude Include="Field.h" />
     <ClInclude Include="GreedyAlgorithm.h" />
     <ClInclude Include="JsonParser.h" />

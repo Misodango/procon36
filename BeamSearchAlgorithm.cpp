@@ -16,6 +16,7 @@ Solution BeamSearchAlgorithm::run() {
 	// Stopwatch
 	Stopwatch stopwatch;
 	stopwatch.start();
+
 	// 各深さでビームサーチを実行
 	for (int32 depth = 0; depth < m_maxDepth; ++depth) {
 		std::priority_queue<BeamState> nextBeam;
@@ -41,14 +42,21 @@ Solution BeamSearchAlgorithm::run() {
 
 			// 全ての可能な操作を試す
 			for (int32 size = 2; size < fieldSize; ++size) {
-				for (int32 x = 0; x <= fieldSize - size; ++x) {
-					for (int32 y = 0; y <= fieldSize - size; ++y) {
+				int32 maxX = fieldSize - size;
+				int32 maxY = fieldSize - size;
+
+				if (size == fieldSize) {
+					maxX = maxY = 0;
+				}
+
+				for (int32 x = 0; x <= maxX; ++x) {
+					for (int32 y = 0; y <= maxY; ++y) {
 						// 既にペアになっている場所は回転しない
 						if (current.field.isPair(x, y)) continue;
 
 						// フィールドをコピーして回転
 						Field nextField = current.field;
-						
+
 						auto [pairDiff, scoreDiff] = nextField.rotateAndGetDiff(x, y, size);
 
 						int32 newPairCount = current.field.countPairs() + pairDiff;
@@ -64,9 +72,6 @@ Solution BeamSearchAlgorithm::run() {
 							// 新しい解を作成
 							Solution nextSolution = current.solution;
 							nextSolution.add({ x, y, size });
-
-							// 状態を評価
-							// float score = nextField.evaluateState();
 
 							// 次のビームに追加
 							nextBeam.push({ nextField, nextSolution, newScore, depth + 1 });

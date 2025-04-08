@@ -7,7 +7,7 @@
 *  @return 0埋めされたフィールド
 */
 
-Field::Field(int32 size) : size(size), entityCount(size* size / 2 - 1), entities(size, size, 0) {}
+Field::Field(int32 size) : size(size), entityCount(size* size / 2), entities(size, size, 0) {}
 
 /*
 *  @brief フィールドのコピーコンストラクタ
@@ -42,8 +42,8 @@ Field& Field::operator=(const Field& other) {
 Field Field::random(int32 size) {
 	Field field(size);
 	// エンティティは1つにつき2回出現する
-	Array<int32> candidates((field.entityCount + 1) * 2);
-	for (int32 i : step(field.entityCount + 1)) {
+	Array<int32> candidates((field.entityCount) * 2);
+	for (int32 i : step(field.entityCount)) {
 		candidates[i * 2] = candidates[i * 2 + 1] = i;
 	}
 	candidates.shuffle();
@@ -135,13 +135,13 @@ void Field::draw() const {
 
 	// Initialize colors only once
 	if (colors.isEmpty()) {
-		colors.resize(entityCount + 1);
+		colors.resize(entityCount);
 
 		// Golden ratio approach for better distribution
 		const double goldenRatioConjugate = 0.618033988749895;
 		double h = 0.5; // Starting hue
 
-		for (int i = 0; i <= entityCount; ++i) {
+		for (int i = 0; i < entityCount; ++i) {
 			h = fmod(h + goldenRatioConjugate, 1.0);
 			colors[i] = ColorF(HSV(h * 360.0, 0.7, 0.95));
 		}
