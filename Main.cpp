@@ -27,7 +27,7 @@ void Main()
 	const FilePath path = FileSystem::FullPath(U"input.json");
 	// JSON パーサーの生成
 	// Field field = Field::fromPath(path);
-	Field field = Field::random(16);
+	Field field = Field::random(12);
 	bool isField = true;
 
 	// solve

@@ -90,7 +90,18 @@ public:
 	// フィールドの評価値を計算する（ビームサーチ用）
 	float evaluateState() const;
 
-	// フィールドをハッシュ値に変換
+	// Zobrist Hashing related members
+	static std::vector<std::vector<std::vector<uint64_t>>> zobristTable;
+	static bool zobristTableInitialized;
+	static std::mt19937_64 rng; // For random number generation
+
+	// Zobrist Hashing initialization
+	static void initializeZobristTable(int32 maxSize, int32 maxEntityValuePlusOne);
+
+	// Standard hash (previous implementation)
+	size_t computeStdHash() const;
+
+	// フィールドをハッシュ値に変換 (Now Zobrist hash)
 	size_t computeHash() const;
 
 	Field() = default;
