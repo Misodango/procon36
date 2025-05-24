@@ -25,9 +25,9 @@ private:
 	};
 
 public:
-	BeamSearchAlgorithm(const Field& field, int32 beamWidth = 20, int32 maxDepth = 200)
-		: m_field(field), m_beamWidth(beamWidth), m_maxDepth(maxDepth) {
-	}
+	// Constructor declaration (definition will be in .cpp)
+	// maxDepth : 24x24/2 = 288手程度で揃えたいので最大300
+	BeamSearchAlgorithm(const Field& field, int32 beamWidth = 20, int32 maxDepth = 300);
 
 	Solution run();
 };

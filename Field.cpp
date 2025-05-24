@@ -1,5 +1,24 @@
 ﻿#include "Field.h"
 #include <Siv3D.hpp> // Siv3Dの機能を使用
+#include <chrono>    // For seeding RNG
+
+// Define static members for Zobrist Hashing
+std::vector<std::vector<std::vector<uint64_t>>> Field::zobristTable;
+bool Field::zobristTableInitialized = false;
+std::mt19937_64 Field::rng(std::chrono::steady_clock::now().time_since_epoch().count()); // Seed RNG
+
+// Named constants for scoring weights in evaluateState
+namespace {
+	static const float ScoreFactorPairCount = 100.0f;
+	static const float ScoreFactorConsecutivePairs = 50.0f;
+	static const float ScoreFactorFormedPairBonus = 5.0f; // Used for already adjacent pairs and in rotateAndGetDiff
+	static const float ScoreFactorUnformedPairBase = 20.0f;
+	static const float ScoreFactorUnformedPairSameRowColBonus = 5.0f;
+	static const float ScoreFactorUnformedPairDiagonalBonus = 2.0f;
+	static const float ScoreFactorUnformedPairEstRotPenalty = 0.5f;
+	static const float ScoreFactor2x2Pattern = 2.0f;
+	static const float ManhattanPenaltyFactorUnpaired = 0.5f;
+}
 
 /*
 *  @brief フィールドのコンストラクタ
@@ -301,7 +320,7 @@ std::pair<int32, float> Field::rotateAndGetDiff(int32 x, int32 y, int32 n) {
 		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
 			if (!seen[entities[cy][cx]] && isPair(cx, cy)) {
 				beforePairs++;
-				beforeScore += 5.0f;  // Same scoring as in evaluateState
+				beforeScore += ScoreFactorFormedPairBonus;  // Use named constant
 				seen[entities[cy][cx]] = true;
 			}
 		}
@@ -320,7 +339,7 @@ std::pair<int32, float> Field::rotateAndGetDiff(int32 x, int32 y, int32 n) {
 		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
 			if (!seen[entities[cy][cx]] && isPair(cx, cy)) {
 				afterPairs++;
-				afterScore += 5.0f;
+				afterScore += ScoreFactorFormedPairBonus; // Use named constant
 				seen[entities[cy][cx]] = true;
 			}
 		}
@@ -445,11 +464,63 @@ bool Field::isPairDown(int32 x, int32 y) const {
 }
 
 /*
-* @brief フィールドをハッシュ値に変換
+* @brief Zobristテーブルを初期化する
+* @param maxSize フィールドの最大サイズ
+* @param maxEntityValuePlusOne エンティティの最大値 + 1
+*/
+void Field::initializeZobristTable(int32 maxSize, int32 maxEntityValuePlusOne) {
+	if (zobristTableInitialized) return;
+
+	zobristTable.resize(maxSize);
+	for (int32 i = 0; i < maxSize; ++i) {
+		zobristTable[i].resize(maxSize);
+		for (int32 j = 0; j < maxSize; ++j) {
+			zobristTable[i][j].resize(maxEntityValuePlusOne);
+			for (int32 k = 0; k < maxEntityValuePlusOne; ++k) {
+				zobristTable[i][j][k] = std::uniform_int_distribution<uint64_t>()(rng);
+			}
+		}
+	}
+	zobristTableInitialized = true;
+}
+
+/*
+* @brief フィールドをZobristハッシュ値に変換
 * @return size_t
 */
-
 size_t Field::computeHash() const {
+	if (!zobristTableInitialized) {
+		// Fallback or error, though initializeZobristTable should be called by algorithm constructor
+		// For safety, one might call initialize here or throw an error.
+		// Let's assume it's initialized. Or, for robustness:
+		// Field::initializeZobristTable(this->size, this->entityCount + 1); // Potentially problematic if called concurrently or with different max sizes
+		// Better to ensure it's called once at the start.
+	}
+	uint64_t currentHash = 0;
+	for (int32 y = 0; y < size; ++y) {
+		for (int32 x = 0; x < size; ++x) {
+			// Ensure entities[y][x] is a valid index for zobristTable's last dimension
+			// And that y, x are within the table bounds (although current use implies this->size <= maxSize used in init)
+			if (y < zobristTable.size() && x < zobristTable[y].size() &&
+				entities[y][x] >= 0 && static_cast<size_t>(entities[y][x]) < zobristTable[y][x].size()) {
+				currentHash ^= zobristTable[y][x][entities[y][x]];
+			}
+			else {
+				// Handle error or use a default hash for unexpected entity values/sizes
+				// This case should ideally not be reached if initialization and field construction are correct.
+				// As a fallback, could XOR with a fixed value or entity value itself, but this breaks Zobrist properties.
+				// For now, let's assume entity values and sizes are always valid.
+			}
+		}
+	}
+	return static_cast<size_t>(currentHash);
+}
+
+/*
+* @brief フィールドを標準ハッシュ値に変換 (旧computeHash)
+* @return size_t
+*/
+size_t Field::computeStdHash() const {
 	size_t hash = 0;
 	for (int32 y : step(size)) {
 		for (int32 x : step(size)) {
@@ -470,12 +541,12 @@ float Field::evaluateState() const {
 
 	// 1. ペアの数を基本スコアとする（最も重要）
 	int32 pairCount = countPairs();
-	score += pairCount * 100.0f;
+	score += pairCount * ScoreFactorPairCount;
 
 	// 2. 左上からの連続ペアを高く評価
 	int32 consecutivePairsH = countPairsFromTopLeftHorizontal();
 	int32 consecutivePairsV = countPairsFromTopLeftVertical();
-	score += std::max(consecutivePairsH, consecutivePairsV) * 50.0f;
+	score += std::max(consecutivePairsH, consecutivePairsV) * ScoreFactorConsecutivePairs;
 
 	// 3. 各エンティティについて、ペアとなるもう一方への「回転距離」を評価
 	// 同じ数字の位置を記録する一時的なマップ
@@ -500,7 +571,7 @@ float Field::evaluateState() const {
 
 			// 既にペアになっている場合はスコア加算（隣接している）
 			if (abs(x1 - x2) + abs(y1 - y2) == 1) {
-				score += 5.0f;
+				score += ScoreFactorFormedPairBonus;
 				continue;
 			}
 
@@ -516,26 +587,42 @@ float Field::evaluateState() const {
 			bool diagonal = abs(x1 - x2) == abs(y1 - y2);
 
 			// マンハッタン距離が小さいほど良い（大きいほど悪い）
-			float distanceScore = 20.0f / (manhattanDist + 1.0f);
+			float distanceScore = ScoreFactorUnformedPairBase / (manhattanDist + 1.0f);
 
 			// 同じ行/列ボーナス
 			if (sameRow || sameCol) {
-				distanceScore += 5.0f;
+				distanceScore += ScoreFactorUnformedPairSameRowColBonus;
 			}
 
 			// 対角線ボーナス（やや難しいがまだ扱いやすい）
 			if (diagonal) {
-				distanceScore += 2.0f;
+				distanceScore += ScoreFactorUnformedPairDiagonalBonus;
 			}
 
 			// 必要な回転回数の推定（より大きなグリッドサイズは動かせる範囲が広いが、精密さは低い）
 			// マンハッタン距離を最小のグリッドサイズ（2）で割った値が必要回転回数の下限
 			int32 estimatedRotations = (manhattanDist + 1) / 2;
-			distanceScore -= estimatedRotations * 0.5f;
+			distanceScore -= estimatedRotations * ScoreFactorUnformedPairEstRotPenalty;
 
 			score += distanceScore;
 		}
 	}
+
+	// Calculate Manhattan distance penalty for unpaired pieces
+	float totalManhattanDistanceUnpaired = 0.0f;
+	for (const auto& [entity, positions] : entityPositions) {
+		if (positions.size() == 2) {
+			auto [x1, y1] = positions[0];
+			auto [x2, y2] = positions[1];
+			int32 manhattanDist = std::abs(x1 - x2) + std::abs(y1 - y2);
+			if (manhattanDist > 1) { // Not adjacent (already paired items are handled by manhattanDist == 1 in the loop above)
+				totalManhattanDistanceUnpaired += static_cast<float>(manhattanDist);
+			}
+		}
+	}
+
+	// Apply Manhattan Distance Penalty using the named constant
+	score -= totalManhattanDistanceUnpaired * ManhattanPenaltyFactorUnpaired;
 
 	// 4. ペアになる可能性が高い配置パターンを評価
 	for (int32 y = 0; y < size - 1; ++y) {
@@ -550,7 +637,7 @@ float Field::evaluateState() const {
 
 			// 2x2内の重複を評価（同じ数字が複数ある＝ペアになりやすい）
 			if (entitiesIn2x2.size() < 4) {
-				score += (4 - entitiesIn2x2.size()) * 2.0f;
+				score += (4 - entitiesIn2x2.size()) * ScoreFactor2x2Pattern;
 			}
 		}
 	}
