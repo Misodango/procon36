@@ -56,3 +56,11 @@ Solution Solution::fromJSON(const JSON& json) {
 	
 	return solution;
 }
+
+/*
+* 空かどうかを確認する
+* @return 空ならtrue、そうでなければfalse
+*/
+bool Solution::isEmpty() const {
+	return ops.empty();
+}
