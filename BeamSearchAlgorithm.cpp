@@ -27,6 +27,9 @@ Solution BeamSearchAlgorithm::run() {
 	// Stopwatch
 	Stopwatch stopwatch;
 	stopwatch.start();
+	Stopwatch operationGenerationStopwatch; // For profiling operation generation
+	Stopwatch beamManagementStopwatch;    // For profiling beam management
+
 	// 各深さでビームサーチを実行
 	for (int32 depth = 0; depth < m_maxDepth; ++depth) {
 		std::priority_queue<BeamState> nextBeam;
@@ -70,6 +73,8 @@ Solution BeamSearchAlgorithm::run() {
 			};
 
 			std::vector<Operation> operations;
+			operationGenerationStopwatch.reset(); // Reset and start for this state's operations
+			operationGenerationStopwatch.start();
 
 			// Generate and evaluate all possible rotation operations
 			// Iterate from largest possible size down to 2
@@ -92,6 +97,19 @@ Solution BeamSearchAlgorithm::run() {
 							if (hasUnpaired) break;
 						}
 
+						// REFINEMENT_POINT: `isPromising` Heuristic.
+						// The current heuristic is `(pairDiff > 0 || scoreDiff > 0.0f) && hasUnpaired;`
+						// For larger boards, this might be too lenient or not discriminative enough.
+						// Consider:
+						// 1. Stricter conditions: e.g., require a minimum `pairDiff` or `scoreDiff`.
+						// 2. Board complexity factor: If the board is very dense with unpaired items,
+						//    prioritize operations that resolve more pairs.
+						// 3. Lookahead (mini-max like): Briefly evaluate the state *after* the potential
+						//    operation to see if it opens up even better subsequent moves.
+						// 4. Dynamic adjustment: The definition of "promising" could change based on depth
+						//    or how well the search is progressing.
+						// 5. Consider operations that might temporarily decrease the score but lead to a
+						//    better overall configuration.
 						bool isPromising = (pairDiff > 0 || scoreDiff > 0.0f) && hasUnpaired;
 						operations.push_back({ x, y, size, pairDiff, scoreDiff, isPromising });
 					}
@@ -128,6 +146,9 @@ Solution BeamSearchAlgorithm::run() {
 
 		// 次の深さに進む
 		currentBeam = nextBeam;
+
+		beamManagementStopwatch.reset();
+		beamManagementStopwatch.start();
 
 		// ビーム幅を制限し、多様性を促進 (Limit beam width and promote diversity)
 		std::priority_queue<BeamState> newBeamQueue; // Renamed to avoid confusion with newBeam in other contexts

@@ -7,7 +7,7 @@
 #include "BFSAlgorithm.h"
 #include "BeamSearchAlgorithm.h"
 #include "SimulatedAnnealingAlgorithm.h"
-
+#include "IterativeBeamSearchAlgorithm.h"
 
 /*
 * @brief Algorithmのコンストラクタ
@@ -53,10 +53,17 @@ Solution Algorithm::run(const Solution::Type type)
 		solution = simulatedAnnealingAlgorithm.run();
 		break;
 	}
-	default:
+	case Solution::Type::IterativeBeamSearch:
+	{
+		IterativeBeamSearchAlgorithm iterativeBeamSearchAlgorithm(m_field);
+		solution = iterativeBeamSearchAlgorithm.run();
 		break;
 	}
 	
+	default:
+		break;
+	}
+
 	return solution;
 }
 

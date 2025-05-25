@@ -37,7 +37,7 @@ void Main()
 	while (System::Update()) {
 
 		if (SimpleGUI::Button(U"Solve", Vec2(1000, 1000), unspecified, (not solutionTask.isValid()))) {
-			solutionTask = algorithm.runAsync(Solution::Type::BeamSearch);
+			solutionTask = algorithm.runAsync(Solution::Type::IterativeBeamSearch);
 		}
 
 		if (solutionTask.isReady()) {
