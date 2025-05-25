@@ -163,8 +163,6 @@ Solution BeamSearchAlgorithm::run() {
 			}
 		}
 		currentBeam = newBeamQueue;
-		//beamManagementStopwatch.stop();
-		// Print << U"Beam management for depth {}: {}ms"_fmt(depth, beamManagementStopwatch.ms());
 	}
 	Print << U"not finished {}ms"_fmt(stopwatch.ms());
 	return bestSolution;
