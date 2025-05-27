@@ -43,7 +43,7 @@ Solution BeamSearchAlgorithm::run() {
 
 			// 完了状態なら解を更新
 			if (current.field.isFinished()) {
-				Print << U"solved ! :{}ms"_fmt(stopwatch.ms());
+				Print << U"solved ! :{}ms in {}steps"_fmt(stopwatch.ms(), current.solution.ops.size());
 				return current.solution;  // 最短解を見つけたので即座に返す
 			}
 
@@ -84,7 +84,8 @@ Solution BeamSearchAlgorithm::run() {
 						if (current.field.isPair(x, y)) continue; // Skip if top-left is already part of a pair
 
 						Field tempField = current.field;
-						auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiff(x, y, size);
+						auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiffCacheFriendly(x, y, size);
+						//auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiff(x, y, size);
 
 						bool hasUnpaired = false;
 						for (int i = 0; i < size; ++i) {
@@ -122,7 +123,9 @@ Solution BeamSearchAlgorithm::run() {
 			// Process sorted operations
 			for (const auto& op : operations) {
 				Field nextField = current.field;
-				nextField.rotateAndGetDiff(op.x, op.y, op.size); // Apply rotation
+				nextField.rotateAndGetDiffCacheFriendly(op.x, op.y, op.size); // Apply rotation
+				//nextField.rotateAndGetDiffOptimized(op.x, op.y, op.size); // Apply rotation
+				//nextField.rotateAndGetDiff(op.x, op.y, op.size); // Apply rotation
 
 				float newScore = current.score + op.scoreDiff;
 

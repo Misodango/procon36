@@ -27,20 +27,21 @@ void Main()
 	const FilePath path = FileSystem::FullPath(U"input.json");
 	// JSON パーサーの生成
 	// Field field = Field::fromPath(path);
-	Field field = Field::random(12);
+	Field field = Field::random(10);
 	bool isField = true;
 
 	// solve
 	Algorithm algorithm(field);
 	AsyncTask<Solution> solutionTask;
-
+	/*AsyncTask<Solution> solutionTask2;
+	solutionTask2 = algorithm.runAsync(Solution::Type::IterativeBeamSearch);*/
 	while (System::Update()) {
 
 		if (SimpleGUI::Button(U"Solve", Vec2(1000, 1000), unspecified, (not solutionTask.isValid()))) {
 			solutionTask = algorithm.runAsync(Solution::Type::IterativeBeamSearch);
 		}
 
-		if (solutionTask.isReady()) {
+		if (solutionTask.isReady() ) {
 			PuzzleVisualizer visualizer(field, solutionTask.get());
 			visualizer.run();
 		}
@@ -48,5 +49,10 @@ void Main()
 			static PuzzleVisualizer visualizer(field, Solution());
 			visualizer.draw();
 		}
+
+		/*if(solutionTask2.isReady()) {
+			solutionTask2.get();
+		}*/
+		
 	}
 }

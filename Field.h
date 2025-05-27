@@ -104,5 +104,28 @@ public:
 	// フィールドをハッシュ値に変換 (Now Zobrist hash)
 	size_t computeHash() const;
 
+	// 効率的なペア計算メソッド
+	int32 countPairsInRegion(int32 startX, int32 startY, int32 endX, int32 endY) const;
+
+	// エンティティ情報取得メソッド
+	std::vector<std::pair<int32, int32>> getEntityPositions(int32 entity) const;
+	bool isEntityPaired(int32 entity) const;
+	float getEntityEuclideanDistance(int32 entity) const;
+	float getTotalEuclideanDistance() const;
+	float getNearestSameEntityDistance(int32 x, int32 y) const;
+
+	// 最適化された差分計算
+	std::pair<int32, float> rotateAndGetDiffOptimized(int32 x, int32 y, int32 n);
+
+	// 回転操作の評価・予測
+	std::pair<int32, float> previewRotationEffect(int32 x, int32 y, int32 n) const;
+	std::tuple<int32, int32, int32, float> findBestRotation(int32 maxRotationSize = 0) const;
+	bool isValidRotation(int32 x, int32 y, int32 n) const;
+
+	// デバッグ用
+	void debugPrint() const;
+
+	std::pair<int32, float> rotateAndGetDiffCacheFriendly(int32 x, int32 y, int32 n);
+
 	Field() = default;
 };
