@@ -127,5 +127,20 @@ public:
 
 	std::pair<int32, float> rotateAndGetDiffCacheFriendly(int32 x, int32 y, int32 n);
 
+	// Field.hに追加するメソッド宣言
+
+
+	std::pair<int32, float> rotateAndGetDiffUltraFast(int32 x, int32 y, int32 n);
+
+	// キャッシュ付き高速版
+	std::pair<int32, float> rotateAndGetDiffCached(int32 x, int32 y, int32 n);
+
+	// バッチ処理版
+	std::vector<std::pair<int32, float>> evaluateMultipleRotations(
+		const std::vector<std::tuple<int32, int32, int32>>& rotations);
+
+	// ベンチマーク用
+	void benchmarkRotateDiff(int32 iterations = 1000);
+
 	Field() = default;
 };

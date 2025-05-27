@@ -2,6 +2,7 @@
 #include <Siv3D.hpp> // Siv3Dの機能を使用
 #include <chrono>    // For seeding RNG
 #include <cmath>     // For Euclidean distance calculations
+#include <bitset>
 
 // Define static members for Zobrist Hashing
 std::vector<std::vector<std::vector<uint64_t>>> Field::zobristTable;
@@ -999,94 +1000,94 @@ void Field::debugPrint() const {
 	}
 }
 
-/*
-* @brief キャッシュフレンドリーな実装
-* @param x X座標
-* @param y Y座標
-* @param n 回転サイズ
-* @return ペア数の差分とスコアの差分
-*/
-std::pair<int32, float> Field::rotateAndGetDiffCacheFriendly(int32 x, int32 y, int32 n) {
-	// 小さい固定サイズの構造体を使用
-	struct CompactEntityState {
-		int32 entity;
-		int16_t x1, y1, x2, y2;  // 座標を16bitに圧縮
-		float euclideanDist;
-		bool isPaired;
-
-		CompactEntityState() : entity(0), euclideanDist(0.0f), isPaired(false) {}
-	};
-
-	// スタックアロケーションで高速化
-	std::array<CompactEntityState, 64> beforeStates;  // 通常64個以下で十分
-	int32 stateCount = 0;
-
-	// 影響を受けるエンティティの状態を記録
-	std::unordered_set<int32> processed;
-
-	// 回転領域 + 境界を一度にスキャン
-	const int32 scanStartX = std::max(0, x - 1);
-	const int32 scanStartY = std::max(0, y - 1);
-	const int32 scanEndX = Min(size, x + n + 1);
-	const int32 scanEndY = Min(size, y + n + 1);
-
-	for (int32 cy = scanStartY; cy < scanEndY; ++cy) {
-		for (int32 cx = scanStartX; cx < scanEndX; ++cx) {
-			int32 entity = entities[cy][cx];
-			if (entity != 0 && processed.find(entity) == processed.end()) {
-				processed.insert(entity);
-
-				auto positions = findEntityPositions(entity, entities, size);
-				if (positions.size() == 2 && stateCount < 64) {
-					CompactEntityState& state = beforeStates[stateCount++];
-					state.entity = entity;
-					state.x1 = static_cast<int16_t>(positions[0].first);
-					state.y1 = static_cast<int16_t>(positions[0].second);
-					state.x2 = static_cast<int16_t>(positions[1].first);
-					state.y2 = static_cast<int16_t>(positions[1].second);
-					state.isPaired = (abs(state.x1 - state.x2) + abs(state.y1 - state.y2) == 1);
-
-					float dx = static_cast<float>(state.x1 - state.x2);
-					float dy = static_cast<float>(state.y1 - state.y2);
-					state.euclideanDist = std::sqrt(dx * dx + dy * dy);
-				}
-			}
-		}
-	}
-
-	// 回転実行
-	rotate(x, y, n);
-
-	// 差分計算
-	int32 pairDiff = 0;
-	float euclideanDiff = 0.0f;
-	float formedPairScoreDiff = 0.0f;
-
-	for (int32 i = 0; i < stateCount; ++i) {
-		const CompactEntityState& beforeState = beforeStates[i];
-		auto positions = findEntityPositions(beforeState.entity, entities, size);
-
-		if (positions.size() == 2) {
-			bool isNowPaired = (abs(positions[0].first - positions[1].first) +
-							  abs(positions[0].second - positions[1].second) == 1);
-
-			float dx = static_cast<float>(positions[0].first - positions[1].first);
-			float dy = static_cast<float>(positions[0].second - positions[1].second);
-			float newEuclideanDist = std::sqrt(dx * dx + dy * dy);
-
-			// 変化のみを計算
-			if (isNowPaired != beforeState.isPaired) {
-				pairDiff += isNowPaired ? 1 : -1;
-				formedPairScoreDiff += isNowPaired ? ScoreFactorFormedPairBonus : -ScoreFactorFormedPairBonus;
-			}
-
-			euclideanDiff += (beforeState.euclideanDist - newEuclideanDist);
-		}
-	}
-
-	float totalScoreDiff = formedPairScoreDiff + euclideanDiff * ScoreFactorEuclideanDistance;
-	return { pairDiff, totalScoreDiff };
-}
+///*
+//* @brief キャッシュフレンドリーな実装
+//* @param x X座標
+//* @param y Y座標
+//* @param n 回転サイズ
+//* @return ペア数の差分とスコアの差分
+//*/
+//std::pair<int32, float> Field::rotateAndGetDiffCacheFriendly(int32 x, int32 y, int32 n) {
+//	// 小さい固定サイズの構造体を使用
+//	struct CompactEntityState {
+//		int32 entity;
+//		int16_t x1, y1, x2, y2;  // 座標を16bitに圧縮
+//		float euclideanDist;
+//		bool isPaired;
+//
+//		CompactEntityState() : entity(0), euclideanDist(0.0f), isPaired(false) {}
+//	};
+//
+//	// スタックアロケーションで高速化
+//	std::array<CompactEntityState, 64> beforeStates;  // 通常64個以下で十分
+//	int32 stateCount = 0;
+//
+//	// 影響を受けるエンティティの状態を記録
+//	std::unordered_set<int32> processed;
+//
+//	// 回転領域 + 境界を一度にスキャン
+//	const int32 scanStartX = std::max(0, x - 1);
+//	const int32 scanStartY = std::max(0, y - 1);
+//	const int32 scanEndX = Min(size, x + n + 1);
+//	const int32 scanEndY = Min(size, y + n + 1);
+//
+//	for (int32 cy = scanStartY; cy < scanEndY; ++cy) {
+//		for (int32 cx = scanStartX; cx < scanEndX; ++cx) {
+//			int32 entity = entities[cy][cx];
+//			if (entity != 0 && processed.find(entity) == processed.end()) {
+//				processed.insert(entity);
+//
+//				auto positions = findEntityPositions(entity, entities, size);
+//				if (positions.size() == 2 && stateCount < 64) {
+//					CompactEntityState& state = beforeStates[stateCount++];
+//					state.entity = entity;
+//					state.x1 = static_cast<int16_t>(positions[0].first);
+//					state.y1 = static_cast<int16_t>(positions[0].second);
+//					state.x2 = static_cast<int16_t>(positions[1].first);
+//					state.y2 = static_cast<int16_t>(positions[1].second);
+//					state.isPaired = (abs(state.x1 - state.x2) + abs(state.y1 - state.y2) == 1);
+//
+//					float dx = static_cast<float>(state.x1 - state.x2);
+//					float dy = static_cast<float>(state.y1 - state.y2);
+//					state.euclideanDist = std::sqrt(dx * dx + dy * dy);
+//				}
+//			}
+//		}
+//	}
+//
+//	// 回転実行
+//	rotate(x, y, n);
+//
+//	// 差分計算
+//	int32 pairDiff = 0;
+//	float euclideanDiff = 0.0f;
+//	float formedPairScoreDiff = 0.0f;
+//
+//	for (int32 i = 0; i < stateCount; ++i) {
+//		const CompactEntityState& beforeState = beforeStates[i];
+//		auto positions = findEntityPositions(beforeState.entity, entities, size);
+//
+//		if (positions.size() == 2) {
+//			bool isNowPaired = (abs(positions[0].first - positions[1].first) +
+//							  abs(positions[0].second - positions[1].second) == 1);
+//
+//			float dx = static_cast<float>(positions[0].first - positions[1].first);
+//			float dy = static_cast<float>(positions[0].second - positions[1].second);
+//			float newEuclideanDist = std::sqrt(dx * dx + dy * dy);
+//
+//			// 変化のみを計算
+//			if (isNowPaired != beforeState.isPaired) {
+//				pairDiff += isNowPaired ? 1 : -1;
+//				formedPairScoreDiff += isNowPaired ? ScoreFactorFormedPairBonus : -ScoreFactorFormedPairBonus;
+//			}
+//
+//			euclideanDiff += (beforeState.euclideanDist - newEuclideanDist);
+//		}
+//	}
+//
+//	float totalScoreDiff = formedPairScoreDiff + euclideanDiff * ScoreFactorEuclideanDistance;
+//	return { pairDiff, totalScoreDiff };
+//}
 
 // ヘルパー関数の最適化版
 /*
@@ -1115,4 +1116,420 @@ inline std::vector<std::pair<int32, int32>> findEntityPositionsFast(
 		}
 	}
 	return positions;
+}
+
+
+// 最適化されたrotateAndGetDiff関数群の実装
+
+#include <array>
+#include <bit>
+
+// SIMD最適化用のエンティティ状態構造体
+struct alignas(32) OptimizedEntityState {
+	int32 entity;
+	int16_t x1, y1, x2, y2;  // 座標（16bit圧縮）
+	float euclideanDist;
+	uint8_t isPaired;
+	uint8_t padding[7];      // アライメント調整
+
+	OptimizedEntityState() : entity(0), euclideanDist(0.0f), isPaired(0) {}
+};
+
+// 高速化ヘルパー関数
+inline float fastSqrt(float x) {
+	return std::sqrt(x); // コンパイラの最適化に任せる
+}
+
+inline int32 manhattan(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
+	return std::abs(x1 - x2) + std::abs(y1 - y2);
+}
+
+inline float euclidean(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
+	float dx = static_cast<float>(x1 - x2);
+	float dy = static_cast<float>(y1 - y2);
+	return fastSqrt(dx * dx + dy * dy);
+}
+
+/*
+* @brief 超高速版差分計算（SIMD最適化）
+* @param x X座標
+* @param y Y座標
+* @param n 回転サイズ
+* @return ペア数の差分とスコアの差分
+*/
+std::pair<int32, float> Field::rotateAndGetDiffUltraFast(int32 x, int32 y, int32 n) {
+	// 早期リターンのチェック
+	if (!isValidRotation(x, y, n)) {
+		return { 0, 0.0f };
+	}
+
+	// 影響範囲の事前計算（境界チェック込み）
+	const int32 scanStartX = std::max(0, x - 1);
+	const int32 scanStartY = std::max(0, y - 1);
+	const int32 scanEndX = std::min(size, x + n + 1);
+	const int32 scanEndY = std::min(size, y + n + 1);
+
+	// === Phase 1: 影響を受けるエンティティを特定 ===
+	std::unordered_set<int32> affectedEntities;
+
+	// 回転領域とその周囲のエンティティを収集
+	for (int32 cy = scanStartY; cy < scanEndY; ++cy) {
+		const int32* row = &entities[cy][0];
+		for (int32 cx = scanStartX; cx < scanEndX; ++cx) {
+			if (row[cx] != 0) {
+				affectedEntities.insert(row[cx]);
+			}
+		}
+	}
+
+	// === Phase 2: 回転前の状態を記録 ===
+	int32 beforePairs = 0;
+	float beforeScoreFormedPairs = 0.0f;
+	float sumEuclideanDistBefore = 0.0f;
+
+	std::bitset<256> processed;
+	std::array<OptimizedEntityState, 64> beforeStates;
+	int32 stateCount = 0;
+
+	for (int32 entity : affectedEntities) {
+		if (entity <= 0 || entity >= 256) continue; // 安全チェック
+
+		std::vector<std::pair<int32, int32>> positions;
+		positions.reserve(2);
+
+		// エンティティの位置を効率的に検索
+		for (int32 findY = 0; findY < size && positions.size() < 2; ++findY) {
+			const int32* findRow = &entities[findY][0];
+			for (int32 findX = 0; findX < size && positions.size() < 2; ++findX) {
+				if (findRow[findX] == entity) {
+					positions.emplace_back(findX, findY);
+				}
+			}
+		}
+
+		if (positions.size() == 2 && stateCount < 64) {
+			OptimizedEntityState& state = beforeStates[stateCount++];
+			state.entity = entity;
+			state.x1 = static_cast<int16_t>(positions[0].first);
+			state.y1 = static_cast<int16_t>(positions[0].second);
+			state.x2 = static_cast<int16_t>(positions[1].first);
+			state.y2 = static_cast<int16_t>(positions[1].second);
+
+			// マンハッタン距離が1の場合、ペアとみなす
+			int32 manhattanDist = std::abs(state.x1 - state.x2) + std::abs(state.y1 - state.y2);
+			state.isPaired = (manhattanDist == 1) ? 1 : 0;
+
+			// ペアの場合、スコアを加算
+			if (state.isPaired) {
+				beforePairs++;
+				beforeScoreFormedPairs += ScoreFactorFormedPairBonus;
+			}
+
+			// ユークリッド距離を計算
+			float dx = static_cast<float>(state.x1 - state.x2);
+			float dy = static_cast<float>(state.y1 - state.y2);
+			state.euclideanDist = std::sqrt(dx * dx + dy * dy);
+			sumEuclideanDistBefore += state.euclideanDist;
+		}
+	}
+
+	// === Phase 3: 回転実行 ===
+	rotate(x, y, n);
+
+	// === Phase 4: 回転後の状態を計算 ===
+	int32 afterPairs = 0;
+	float afterScoreFormedPairs = 0.0f;
+	float sumEuclideanDistAfter = 0.0f;
+
+	for (int32 i = 0; i < stateCount; ++i) {
+		const OptimizedEntityState& beforeState = beforeStates[i];
+
+		// 回転後の位置を再検索
+		std::vector<std::pair<int32, int32>> newPositions;
+		newPositions.reserve(2);
+
+		for (int32 findY = 0; findY < size && newPositions.size() < 2; ++findY) {
+			const int32* findRow = &entities[findY][0];
+			for (int32 findX = 0; findX < size && newPositions.size() < 2; ++findX) {
+				if (findRow[findX] == beforeState.entity) {
+					newPositions.emplace_back(findX, findY);
+				}
+			}
+		}
+
+		if (newPositions.size() == 2) {
+			// マンハッタン距離を計算
+			int32 manhattanDist = std::abs(newPositions[0].first - newPositions[1].first) +
+				std::abs(newPositions[0].second - newPositions[1].second);
+			bool isNowPaired = (manhattanDist == 1);
+
+			// ペアの場合、スコアを加算
+			if (isNowPaired) {
+				afterPairs++;
+				afterScoreFormedPairs += ScoreFactorFormedPairBonus;
+			}
+
+			// ユークリッド距離を計算
+			float dx = static_cast<float>(newPositions[0].first - newPositions[1].first);
+			float dy = static_cast<float>(newPositions[0].second - newPositions[1].second);
+			float newEuclideanDist = std::sqrt(dx * dx + dy * dy);
+			sumEuclideanDistAfter += newEuclideanDist;
+		}
+	}
+
+	// === Phase 5: 差分を計算 ===
+	int32 pairDiff = afterPairs - beforePairs;
+	float formedPairScoreDiff = afterScoreFormedPairs - beforeScoreFormedPairs;
+	float euclideanScoreDiff = (sumEuclideanDistBefore - sumEuclideanDistAfter) * ScoreFactorEuclideanDistance;
+
+	return { pairDiff, formedPairScoreDiff + euclideanScoreDiff };
+}
+
+// キャッシュ管理クラス
+class RotationCache {
+private:
+	struct CacheKey {
+		uint64_t fieldHash;
+		int16_t x, y, n;
+
+		bool operator==(const CacheKey& other) const {
+			return fieldHash == other.fieldHash && x == other.x && y == other.y && n == other.n;
+		}
+	};
+
+	struct CacheKeyHash {
+		size_t operator()(const CacheKey& key) const {
+			return key.fieldHash ^ (static_cast<size_t>(key.x) << 16) ^
+				(static_cast<size_t>(key.y) << 8) ^ static_cast<size_t>(key.n);
+		}
+	};
+
+	std::unordered_map<CacheKey, std::pair<int32, float>, CacheKeyHash> cache;
+	static constexpr size_t MAX_CACHE_SIZE = 10000;
+
+public:
+	bool tryGet(uint64_t fieldHash, int32 x, int32 y, int32 n, std::pair<int32, float>& result) {
+		CacheKey key{ fieldHash, static_cast<int16_t>(x), static_cast<int16_t>(y), static_cast<int16_t>(n) };
+		auto it = cache.find(key);
+		if (it != cache.end()) {
+			result = it->second;
+			return true;
+		}
+		return false;
+	}
+
+	void store(uint64_t fieldHash, int32 x, int32 y, int32 n, const std::pair<int32, float>& result) {
+		if (cache.size() >= MAX_CACHE_SIZE) {
+			cache.clear(); // 単純なキャッシュクリア（必要に応じてLRU実装も可）
+		}
+		CacheKey key{ fieldHash, static_cast<int16_t>(x), static_cast<int16_t>(y), static_cast<int16_t>(n) };
+		cache[key] = result;
+	}
+};
+
+/*
+* @brief キャッシュ付き高速版差分計算
+* @param x X座標
+* @param y Y座標
+* @param n 回転サイズ
+* @return ペア数の差分とスコアの差分
+*/
+std::pair<int32, float> Field::rotateAndGetDiffCached(int32 x, int32 y, int32 n) {
+	static RotationCache cache;
+
+	uint64_t currentHash = computeHash();
+	std::pair<int32, float> cachedResult;
+
+	if (cache.tryGet(currentHash, x, y, n, cachedResult)) {
+		// キャッシュヒット - 実際に回転を実行
+		rotate(x, y, n);
+		return cachedResult;
+	}
+
+	// キャッシュミス - 計算して保存
+	std::pair<int32, float> result = rotateAndGetDiffUltraFast(x, y, n);
+	cache.store(currentHash, x, y, n, result);
+
+	return result;
+}
+
+/*
+* @brief バッチ処理版（複数の回転を一度に評価）
+* @param rotations 評価する回転操作のリスト
+* @return 各回転の差分スコアのリスト
+*/
+std::vector<std::pair<int32, float>> Field::evaluateMultipleRotations(
+	const std::vector<std::tuple<int32, int32, int32>>& rotations) {
+
+	std::vector<std::pair<int32, float>> results;
+	results.reserve(rotations.size());
+
+	// 元の状態を保存
+	Field originalField = *this;
+
+	for (const auto& [x, y, n] : rotations) {
+		// 元の状態に復元
+		*this = originalField;
+
+		// 評価実行
+		results.push_back(rotateAndGetDiffUltraFast(x, y, n));
+	}
+
+	// 最後に元の状態に戻す
+	*this = originalField;
+
+	return results;
+}
+
+/*
+* @brief キャッシュフレンドリーな実装の改良版
+* @param x X座標
+* @param y Y座標
+* @param n 回転サイズ
+* @return ペア数の差分とスコアの差分
+*/
+std::pair<int32, float> Field::rotateAndGetDiffCacheFriendly(int32 x, int32 y, int32 n) {
+	// 境界チェック - 早期リターン
+	if (!isValidRotation(x, y, n)) {
+		return { 0, 0.0f };
+	}
+
+	// 影響範囲を計算
+	const int32 scanStartX = std::max(0, x - 1);
+	const int32 scanStartY = std::max(0, y - 1);
+	const int32 scanEndX = std::min(size, x + n + 1);
+	const int32 scanEndY = std::min(size, y + n + 1);
+
+	// 小さい固定サイズの構造体をスタック上に確保
+	struct CompactEntityState {
+		int32 entity;
+		int16_t x1, y1, x2, y2;
+		float euclideanDist;
+		bool isPaired;
+	};
+
+	// スタックアロケーションで高速化
+	std::array<CompactEntityState, 64> beforeStates;
+	int32 stateCount = 0;
+
+	// 影響を受けるエンティティを追跡
+	std::bitset<256> processed; // 高速ビットセット
+
+	// 回転前の状態を収集 - キャッシュフレンドリーなスキャン
+	for (int32 cy = scanStartY; cy < scanEndY; ++cy) {
+		const int32* row = &entities[cy][0]; // 行キャッシュ
+		for (int32 cx = scanStartX; cx < scanEndX; ++cx) {
+			int32 entity = row[cx];
+
+			if (entity > 0 && !processed[entity] && stateCount < 64) {
+				processed[entity] = true;
+
+				// 効率的な位置検索
+				std::vector<std::pair<int32, int32>> positions;
+				positions.reserve(2);
+
+				// 高速位置検索
+				for (int32 ey = 0; ey < size && positions.size() < 2; ++ey) {
+					const int32* entityRow = &entities[ey][0];
+					for (int32 ex = 0; ex < size && positions.size() < 2; ++ex) {
+						if (entityRow[ex] == entity) {
+							positions.emplace_back(ex, ey);
+						}
+					}
+				}
+
+				if (positions.size() == 2) {
+					CompactEntityState& state = beforeStates[stateCount++];
+					state.entity = entity;
+					state.x1 = static_cast<int16_t>(positions[0].first);
+					state.y1 = static_cast<int16_t>(positions[0].second);
+					state.x2 = static_cast<int16_t>(positions[1].first);
+					state.y2 = static_cast<int16_t>(positions[1].second);
+
+					// マンハッタン距離=1がペア
+					state.isPaired = (std::abs(state.x1 - state.x2) + std::abs(state.y1 - state.y2) == 1);
+
+					// ユークリッド距離計算
+					float dx = static_cast<float>(state.x1 - state.x2);
+					float dy = static_cast<float>(state.y1 - state.y2);
+					state.euclideanDist = std::sqrt(dx * dx + dy * dy);
+				}
+			}
+		}
+	}
+
+	// 回転実行
+	rotate(x, y, n);
+
+	// 差分計算
+	int32 pairDiff = 0;
+	float euclideanDiff = 0.0f;
+	float formedPairScoreDiff = 0.0f;
+
+	// 最適化されたループ - メモリアクセスパターンを意識
+	for (int32 i = 0; i < stateCount; ++i) {
+		const CompactEntityState& beforeState = beforeStates[i];
+
+		// 回転後の位置を再検索
+		std::vector<std::pair<int32, int32>> newPositions;
+		newPositions.reserve(2);
+
+		for (int32 ey = 0; ey < size && newPositions.size() < 2; ++ey) {
+			const int32* entityRow = &entities[ey][0];
+			for (int32 ex = 0; ex < size && newPositions.size() < 2; ++ex) {
+				if (entityRow[ex] == beforeState.entity) {
+					newPositions.emplace_back(ex, ey);
+				}
+			}
+		}
+
+		if (newPositions.size() == 2) {
+			bool isNowPaired = (std::abs(newPositions[0].first - newPositions[1].first) +
+							  std::abs(newPositions[0].second - newPositions[1].second) == 1);
+
+			float dx = static_cast<float>(newPositions[0].first - newPositions[1].first);
+			float dy = static_cast<float>(newPositions[0].second - newPositions[1].second);
+			float newEuclideanDist = std::sqrt(dx * dx + dy * dy);
+
+			// 変化のみを計算
+			if (isNowPaired != beforeState.isPaired) {
+				pairDiff += isNowPaired ? 1 : -1;
+				formedPairScoreDiff += isNowPaired ? ScoreFactorFormedPairBonus : -ScoreFactorFormedPairBonus;
+			}
+
+			euclideanDiff += (beforeState.euclideanDist - newEuclideanDist);
+		}
+	}
+
+	float totalScoreDiff = formedPairScoreDiff + euclideanDiff * ScoreFactorEuclideanDistance;
+	return { pairDiff, totalScoreDiff };
+}
+
+/*
+* @brief プロファイリング用のベンチマーク関数
+* @param iterations ベンチマーク反復回数
+*/
+void Field::benchmarkRotateDiff(int32 iterations) {
+	auto start = std::chrono::high_resolution_clock::now();
+
+	Field originalField = *this;
+
+	for (int32 i = 0; i < iterations; ++i) {
+		// ランダムな回転をテスト
+		int32 x = rand() % (size - 1);
+		int32 y = rand() % (size - 1);
+		int32 n = 2 + rand() % (size - std::max(x, y) - 1);
+
+		rotateAndGetDiffUltraFast(x, y, n);
+
+		// フィールドをリセット
+		*this = originalField;
+	}
+
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	Print << U"Benchmark: " << iterations << U" iterations in "
+		<< duration.count() << U" microseconds";
+	Print << U"Average: " << (duration.count() / iterations) << U" microseconds per call";
 }

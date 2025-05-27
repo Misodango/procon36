@@ -84,7 +84,8 @@ Solution BeamSearchAlgorithm::run() {
 						if (current.field.isPair(x, y)) continue; // Skip if top-left is already part of a pair
 
 						Field tempField = current.field;
-						auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiffCacheFriendly(x, y, size);
+						auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiffUltraFast(x, y, size);
+						//auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiffCacheFriendly(x, y, size);
 						//auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiff(x, y, size);
 
 						bool hasUnpaired = false;
@@ -123,7 +124,8 @@ Solution BeamSearchAlgorithm::run() {
 			// Process sorted operations
 			for (const auto& op : operations) {
 				Field nextField = current.field;
-				nextField.rotateAndGetDiffCacheFriendly(op.x, op.y, op.size); // Apply rotation
+				nextField.rotateAndGetDiffUltraFast(op.x, op.y, op.size); // Apply rotation
+				//nextField.rotateAndGetDiffCacheFriendly(op.x, op.y, op.size); // Apply rotation
 				//nextField.rotateAndGetDiffOptimized(op.x, op.y, op.size); // Apply rotation
 				//nextField.rotateAndGetDiff(op.x, op.y, op.size); // Apply rotation
 
