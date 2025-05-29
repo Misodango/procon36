@@ -32,11 +32,19 @@ Solution BeamSearchAlgorithm::run() {
 
 	// 各深さでビームサーチを実行
 	for (int32 depth = 0; depth < m_maxDepth; ++depth) {
+		if (stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
+			Print << U"Beam search internal timeout of {}s reached at depth {}."_fmt(INTERNAL_TIMEOUT_SECONDS, depth);
+			break;
+		}
 		std::priority_queue<BeamState> nextBeam;
 		int32 statesExamined = 0;
 
 		// 現在のビームの各状態を展開
 		while (!currentBeam.empty() && statesExamined < m_beamWidth) {
+			if (stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
+				Print << U"Beam search internal timeout of {}s reached during state expansion at depth {}."_fmt(INTERNAL_TIMEOUT_SECONDS, depth);
+				goto timeout_exit_label; // Using goto to break out of nested loops, ensure label is defined after loops.
+			}
 			BeamState current = currentBeam.top();
 			currentBeam.pop();
 			statesExamined++;
@@ -169,6 +177,20 @@ Solution BeamSearchAlgorithm::run() {
 		}
 		currentBeam = newBeamQueue;
 	}
-	Print << U"not finished {}ms"_fmt(stopwatch.ms());
+
+timeout_exit_label:; // Label for goto, placed after the main loops
+
+	if (not bestSolution.ops.empty() && stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
+		Print << U"Timeout: Returning best solution found so far after {}ms."_fmt(stopwatch.ms());
+	} else if (bestSolution.ops.empty() && stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
+		Print << U"Timeout: No solution found within {}ms."_fmt(stopwatch.ms());
+	} else if (m_field.isFinished()) {
+		// This case should be handled by the early exit when a solution is found.
+		// If reached, it means a finished state was achieved but not returned immediately.
+		Print << U"Finished (but not caught earlier): {}ms"_fmt(stopwatch.ms());
+	}
+	else {
+		Print << U"Not finished (max depth or empty beam): {}ms"_fmt(stopwatch.ms());
+	}
 	return bestSolution;
 }
