@@ -89,7 +89,8 @@ Solution BeamSearchAlgorithm::run() {
 			for (int32 size = fieldSize - 1; size >= 2; --size) {
 				for (int32 x = 0; x <= fieldSize - size; ++x) {
 					for (int32 y = 0; y <= fieldSize - size; ++y) {
-						if (current.field.isPair(x, y)) continue; // Skip if top-left is already part of a pair
+						// 右側のペアだったら分断されてしまう
+						if (current.field.isPairRight(x, y)) continue; 
 
 						Field tempField = current.field;
 						auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiffUltraFast(x, y, size);
@@ -125,18 +126,14 @@ Solution BeamSearchAlgorithm::run() {
 					}
 				}
 			}
-
+			
 			// Sort operations
 			std::sort(operations.begin(), operations.end());
 
 			// Process sorted operations
 			for (const auto& op : operations) {
 				Field nextField = current.field;
-				nextField.rotateAndGetDiffUltraFast(op.x, op.y, op.size); // Apply rotation
-				//nextField.rotateAndGetDiffCacheFriendly(op.x, op.y, op.size); // Apply rotation
-				//nextField.rotateAndGetDiffOptimized(op.x, op.y, op.size); // Apply rotation
-				//nextField.rotateAndGetDiff(op.x, op.y, op.size); // Apply rotation
-
+				nextField.rotate(op.x, op.y, op.size);
 				float newScore = current.score + op.scoreDiff;
 
 				size_t hash = nextField.computeHash(); // Will now use Zobrist hash
