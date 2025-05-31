@@ -72,7 +72,7 @@ void Main()
 	double boardSizeSlider = static_cast<double>(selectedBoardSize);
 
 	// Data collection settings
-	const int32 num_data_samples = 100; // Can be adjusted
+	const int32 num_data_samples = 10000; // Can be adjusted
 	const FilePath data_output_dir = U"ml_data";
 
 
