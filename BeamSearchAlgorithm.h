@@ -28,7 +28,7 @@ private:
 public:
 	// Constructor declaration (definition will be in .cpp)
 	// maxDepth : 24x24/2 = 288手程度で揃えたいので最大300
-	BeamSearchAlgorithm(const Field& field, int32 beamWidth = 1000, int32 maxDepth = 300);
+	BeamSearchAlgorithm(const Field& field, int32 beamWidth = 100, int32 maxDepth = 300);
 
 	Solution run();
 };

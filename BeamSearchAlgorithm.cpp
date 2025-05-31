@@ -135,7 +135,7 @@ Solution BeamSearchAlgorithm::run() {
 							if (current_field_const_ref.isPairRight(x, y)) continue;
 
 							Field tempField = current_field_const_ref; // Local copy for modification
-							auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiffUltraFast(x, y, s);
+							auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiff(x, y, s);
 
 							bool hasUnpaired = false;
 							for (int r_i = 0; r_i < s; ++r_i) {
