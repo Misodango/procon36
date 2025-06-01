@@ -1533,3 +1533,197 @@ void Field::benchmarkRotateDiff(int32 iterations) {
 		<< duration.count() << U" microseconds";
 	Print << U"Average: " << (duration.count() / iterations) << U" microseconds per call";
 }
+
+
+namespace {
+	static const float EntropyWeight = -10.0f;  // エントロピーが高いほどペナルティ
+	static const float PositionalEntropyWeight = -5.0f;
+	static const float ClusteringBonusWeight = 15.0f;
+	static const float LocalOrderWeight = 8.0f;
+}
+
+/*
+* @brief Shannon エントロピーを計算
+* @param frequencies 各要素の出現頻度のマップ
+* @param totalCount 総数
+* @return float エントロピー値
+*/
+float Field::calculateShannonEntropy(const std::map<int32, int32>& frequencies, int32 totalCount) const {
+	if (totalCount == 0) return 0.0f;
+
+	float entropy = 0.0f;
+	for (const auto& [entity, count] : frequencies) {
+		if (count > 0) {
+			float probability = static_cast<float>(count) / totalCount;
+			entropy -= probability * std::log2f(probability);
+		}
+	}
+	return entropy;
+}
+
+/*
+* @brief 局所的な位置エントロピーを計算
+* @param windowSize 評価ウィンドウのサイズ（例：3x3）
+* @return float 平均位置エントロピー
+*/
+float Field::calculatePositionalEntropy(int32 windowSize) const {
+	if (windowSize < 2) windowSize = 2;
+
+	float totalEntropy = 0.0f;
+	int32 windowCount = 0;
+
+	// 各位置を中心とするウィンドウでエントロピーを計算
+	for (int32 y = 0; y <= size - windowSize; ++y) {
+		for (int32 x = 0; x <= size - windowSize; ++x) {
+			std::map<int32, int32> localFreqs;
+			int32 totalInWindow = 0;
+
+			// ウィンドウ内の要素を集計
+			for (int32 dy = 0; dy < windowSize; ++dy) {
+				for (int32 dx = 0; dx < windowSize; ++dx) {
+					int32 entity = entities[y + dy][x + dx];
+					localFreqs[entity]++;
+					totalInWindow++;
+				}
+			}
+
+			totalEntropy += calculateShannonEntropy(localFreqs, totalInWindow);
+			windowCount++;
+		}
+	}
+
+	return windowCount > 0 ? totalEntropy / windowCount : 0.0f;
+}
+
+/*
+* @brief クラスタリング係数を計算（同じ要素の密集度）
+* @return float クラスタリング係数（0.0-1.0）
+*/
+float Field::calculateClusteringCoefficient() const {
+	int32 totalSameNeighbors = 0;
+	int32 totalPossibleNeighbors = 0;
+
+	const int32 dx[4] = { 1, 0, -1, 0 };
+	const int32 dy[4] = { 0, 1, 0, -1 };
+
+	for (int32 y = 0; y < size; ++y) {
+		for (int32 x = 0; x < size; ++x) {
+			int32 currentEntity = entities[y][x];
+			int32 validNeighbors = 0;
+			int32 sameNeighbors = 0;
+
+			for (int32 dir = 0; dir < 4; ++dir) {
+				int32 nx = x + dx[dir];
+				int32 ny = y + dy[dir];
+
+				if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+					validNeighbors++;
+					if (entities[ny][nx] == currentEntity) {
+						sameNeighbors++;
+					}
+				}
+			}
+
+			totalSameNeighbors += sameNeighbors;
+			totalPossibleNeighbors += validNeighbors;
+		}
+	}
+
+	return totalPossibleNeighbors > 0 ?
+		static_cast<float>(totalSameNeighbors) / totalPossibleNeighbors : 0.0f;
+}
+
+/*
+* @brief 局所的な秩序度を計算
+* @return float 秩序度スコア
+*/
+float Field::calculateLocalOrder() const {
+	float orderScore = 0.0f;
+
+	// 水平方向の連続性
+	for (int32 y = 0; y < size; ++y) {
+		int32 consecutiveCount = 1;
+		for (int32 x = 1; x < size; ++x) {
+			if (entities[y][x] == entities[y][x - 1]) {
+				consecutiveCount++;
+			}
+			else {
+				if (consecutiveCount >= 2) {
+					orderScore += consecutiveCount * consecutiveCount; // 二乗で重み付け
+				}
+				consecutiveCount = 1;
+			}
+		}
+		if (consecutiveCount >= 2) {
+			orderScore += consecutiveCount * consecutiveCount;
+		}
+	}
+
+	// 垂直方向の連続性
+	for (int32 x = 0; x < size; ++x) {
+		int32 consecutiveCount = 1;
+		for (int32 y = 1; y < size; ++y) {
+			if (entities[y][x] == entities[y - 1][x]) {
+				consecutiveCount++;
+			}
+			else {
+				if (consecutiveCount >= 2) {
+					orderScore += consecutiveCount * consecutiveCount;
+				}
+				consecutiveCount = 1;
+			}
+		}
+		if (consecutiveCount >= 2) {
+			orderScore += consecutiveCount * consecutiveCount;
+		}
+	}
+
+	return orderScore;
+}
+
+/*
+* @brief 全体的なエントロピー評価値を計算
+* @return float エントロピーベースの評価値
+*/
+float Field::calculateEntropyScore() const {
+	float entropyScore = 0.0f;
+
+	// 1. 全体のエンティティ分布エントロピー
+	std::map<int32, int32> globalFreqs;
+	for (int32 y = 0; y < size; ++y) {
+		for (int32 x = 0; x < size; ++x) {
+			globalFreqs[entities[y][x]]++;
+		}
+	}
+	float globalEntropy = calculateShannonEntropy(globalFreqs, size * size);
+	entropyScore += globalEntropy * EntropyWeight;
+
+	// 2. 局所的な位置エントロピー（3x3ウィンドウ）
+	float positionalEntropy = calculatePositionalEntropy(4);
+	entropyScore += positionalEntropy * PositionalEntropyWeight;
+
+	// 3. クラスタリング係数（高いほど良い）
+	float clustering = calculateClusteringCoefficient();
+	entropyScore += clustering * ClusteringBonusWeight;
+
+	// 4. 局所的な秩序度（連続する同じ要素）
+	float localOrder = calculateLocalOrder();
+	entropyScore += localOrder * LocalOrderWeight;
+
+	return entropyScore;
+}
+
+/*
+* @brief 修正されたevaluateState関数（エントロピー項を追加）
+* @return float 評価値（高いほど良い状態）
+*/
+float Field::evaluateStateWithEntropy() const {
+	// 既存の評価関数の結果を取得
+	float baseScore = evaluateState();
+
+	// エントロピーベースの評価を追加
+	float entropyScore = calculateEntropyScore();
+
+	// 最終的なスコア
+	return baseScore + entropyScore;
+}

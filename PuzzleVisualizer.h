@@ -53,6 +53,8 @@ private:
 	// フィールドの描画
 	void drawField() const;
 
+	std::vector<double> m_entropies; // Added to store entropy values for each step
+
 public:
 	PuzzleVisualizer(const Field& initialField, const Solution& solution);
 

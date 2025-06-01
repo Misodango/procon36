@@ -142,5 +142,13 @@ public:
 	// ベンチマーク用
 	void benchmarkRotateDiff(int32 iterations = 1000);
 
+	float calculateShannonEntropy(const std::map<int32, int32>& frequencies, int32 totalCount) const;
+	float calculatePositionalEntropy(int32 windowSize = 3) const;
+	float calculateClusteringCoefficient() const;
+	float calculateLocalOrder() const;
+
+	float calculateEntropyScore() const;
+	float evaluateStateWithEntropy() const;
+
 	Field() = default;
 };

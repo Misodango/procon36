@@ -207,6 +207,12 @@ void PuzzleVisualizer::drawControls()
 	int32_t pairs = m_currentField.countPairs();
 	int32_t totalPairs = (m_initialField.getSize() * m_initialField.getSize()) / 2;
 	m_font(U"Pairs: {}/{}"_fmt(pairs, totalPairs)).draw(m_controlRect.x + 10, m_controlRect.y + 140, ColorF(1.0));
+
+	if (!m_entropies.empty())
+	{
+		m_font(U"Entropy: {:.4f}"_fmt(m_entropies.back()))
+			.draw(m_controlRect.x + 10, m_controlRect.y + 170, ColorF(1.0));
+	}
 }
 
 
@@ -286,11 +292,17 @@ void PuzzleVisualizer::handleInput()
 
 void PuzzleVisualizer::updateFieldToCurrentStep()
 {
+	m_entropies.clear(); // Reset entropy values each time we recalculate
+
 	// 初期状態から現在のステップまで操作を適用
 	m_currentField = m_initialField;
 	for (int i = 0; i < m_currentStep; i++) {
 		const Operation& op = m_operations[i];
 		m_currentField.rotate(op.x, op.y, op.n);
+
+		// Calculate entropy for the new board state
+		double entropy = m_currentField.calculateEntropyScore(); // or calculatePositionalEntropy()
+		m_entropies.push_back(entropy);
 	}
 }
 
