@@ -349,6 +349,7 @@
     <ClInclude Include="SimulatedAnnealingAlgorithm.h" />
     <ClInclude Include="Solution.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TestFields.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App\example\obj\blacksmith.obj">

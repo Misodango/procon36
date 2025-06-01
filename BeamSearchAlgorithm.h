@@ -10,6 +10,7 @@ private:
 	Field m_field;
 	int32 m_beamWidth;  // ビーム幅
 	int32 m_maxDepth;   // 最大探索深さ(N*N/2くらいが理想)
+	static constexpr double INTERNAL_TIMEOUT_SECONDS = 300.0;
 
 	// 状態を評価値とともに保持する構造体
 	struct BeamState {

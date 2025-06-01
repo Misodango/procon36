@@ -177,6 +177,9 @@
     <ClCompile Include="IterativeBeamSearchAlgorithm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TestRunner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -874,6 +877,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IterativeBeamSearchAlgorithm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFields.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
