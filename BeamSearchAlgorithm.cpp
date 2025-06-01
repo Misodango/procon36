@@ -48,7 +48,8 @@ Solution BeamSearchAlgorithm::run() {
 		while (!currentBeam.empty() && statesExamined < m_beamWidth) {
 			if (stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
 				Print << U"Beam search internal timeout of {}s reached during state expansion at depth {}."_fmt(INTERNAL_TIMEOUT_SECONDS, depth);
-				goto timeout_exit_label; // Using goto to break out of nested loops, ensure label is defined after loops.
+				timeoutOccurred = true; // Set flag to indicate timeout
+				break; // Break out of the inner loop
 			}
 			BeamState current = currentBeam.top();
 			currentBeam.pop();
