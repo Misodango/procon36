@@ -72,14 +72,18 @@ Solution BeamSearchAlgorithm::run() {
 				int pairDiff;
 				float scoreDiff;
 				bool isPromising;
+				float entropyDiff; // new field
 
-				// Sort order: promising first, then by scoreDiff (desc), then by pairDiff (desc)
+				// Sort order: promising first, then by scoreDiff (desc), then by entropyDiff (asc), then by pairDiff (desc)
 				bool operator<(const Operation& other) const {
 					if (isPromising != other.isPromising) {
 						return isPromising > other.isPromising; // true (promising) comes before false
 					}
 					if (scoreDiff != other.scoreDiff) {
 						return scoreDiff > other.scoreDiff;
+					}
+					if (entropyDiff != other.entropyDiff) {
+						return entropyDiff < other.entropyDiff; // prefer lower entropy
 					}
 					return pairDiff > other.pairDiff;
 				}
@@ -125,6 +129,8 @@ Solution BeamSearchAlgorithm::run() {
 						// Estimate based on chunk size, can be refined
 						local_thread_operations.reserve(end_idx - start_idx); 
 
+						float oldEntropy = current_field_const_ref.evaluateStateWithEntropy();
+
 						for (size_t item_idx = start_idx; item_idx < end_idx; ++item_idx) {
 							const auto& item = work_items[item_idx];
 							const int32 s = item.s;
@@ -136,6 +142,8 @@ Solution BeamSearchAlgorithm::run() {
 
 							Field tempField = current_field_const_ref; // Local copy for modification
 							auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiff(x, y, s);
+							float newEntropy = tempField.evaluateStateWithEntropy();
+							float entropyDiff = newEntropy - oldEntropy;
 
 							bool hasUnpaired = false;
 							for (int r_i = 0; r_i < s; ++r_i) {
@@ -149,7 +157,7 @@ Solution BeamSearchAlgorithm::run() {
 							}
 							
 							bool isPromising = (pairDiff > 0 || scoreDiff > 0.0f) && hasUnpaired;
-							local_thread_operations.push_back({ x, y, s, pairDiff, scoreDiff, isPromising });
+							local_thread_operations.push_back({ x, y, s, pairDiff, scoreDiff, isPromising, entropyDiff });
 						}
 						return local_thread_operations;
 					}));
