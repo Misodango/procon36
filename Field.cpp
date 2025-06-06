@@ -602,14 +602,8 @@ float Field::evaluateState() const {
 
 	float score = 0.0f;
 
-	// 1. ペアの数を基本スコアとする（最も重要）
 	int32 pairCount = countPairs();
 	score += pairCount * ScoreFactorPairCount;
-
-	// 2. 左上からの連続ペアを高く評価
-	int32 consecutivePairsH = countPairsFromTopLeftHorizontal();
-	int32 consecutivePairsV = countPairsFromTopLeftVertical();
-	score += std::max(consecutivePairsH, consecutivePairsV) * ScoreFactorConsecutivePairs;
 
 	return score;
 }
