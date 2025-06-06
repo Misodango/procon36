@@ -26,6 +26,7 @@ private:
 	double m_sliderValue;
 	bool m_showNumbers;
 	bool m_colorTile;
+	bool m_hasClosedVisualizer;
 
 	// ボタン
 	Rect m_playButton, m_pauseButton, m_resetButton;

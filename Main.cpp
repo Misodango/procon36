@@ -113,7 +113,7 @@ void Main()
 		case AppMode::InitializingGameplay:
 		{
 			SimpleGUI::Headline(U"Gameplay Setup", Vec2{ 20, 100 });
-			SimpleGUI::Slider(U"Board Size (Even): {:.0f}"_fmt(boardSizeSlider), boardSizeSlider, 6.0, 12.0, Vec2{ 20, 140 }, 180, 100);
+			SimpleGUI::Slider(U"Board Size (Even): {:.0f}"_fmt(boardSizeSlider), boardSizeSlider, 6.0, 24.0, Vec2{ 20, 140 }, 180, 100);
 			selectedBoardSize = static_cast<int32>(boardSizeSlider);
 			if (selectedBoardSize % 2 != 0) { // Ensure even size
 				selectedBoardSize = Max(6, selectedBoardSize -1); 
