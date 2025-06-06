@@ -18,6 +18,7 @@ std::mt19937_64 Field::rng(std::chrono::steady_clock::now().time_since_epoch().c
 namespace {
 	static const float ScoreFactorPairCount = 100.0f;
 	static const float ScoreFactorConsecutivePairs = 50.0f;
+	// Consider adjusting ScoreFactorFormedPairBonus to change the importance of pair formation
 	static const float ScoreFactorFormedPairBonus = 5.0f; // Used for already adjacent pairs and in rotateAndGetDiff
 	static const float ScoreFactorUnformedPairBase = 20.0f;
 	static const float ScoreFactorUnformedPairSameRowColBonus = 5.0f;
@@ -25,6 +26,7 @@ namespace {
 	static const float ScoreFactorUnformedPairEstRotPenalty = 0.5f;
 	static const float ScoreFactor2x2Pattern = 2.0f;
 	static const float ManhattanPenaltyFactorUnpaired = 0.5f;
+	// Consider adjusting ScoreFactorEuclideanDistance to change the influence of distance optimization
 	static const float ScoreFactorEuclideanDistance = 0.1f; // New scoring factor
 
 	// Helper function to find positions of an entity

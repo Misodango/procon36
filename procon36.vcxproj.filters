@@ -177,7 +177,7 @@
     <ClCompile Include="IterativeBeamSearchAlgorithm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TestRunner.cpp">
+    <ClCompile Include="ReplicaExchangeMonteCarlo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -880,6 +880,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TestFields.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ReplicaExchangeMonteCarlo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

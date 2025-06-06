@@ -8,6 +8,7 @@
 #include "BeamSearchAlgorithm.h"
 #include "SimulatedAnnealingAlgorithm.h"
 #include "IterativeBeamSearchAlgorithm.h"
+#include "ReplicaExchangeMonteCarlo.h"
 
 /*
 * @brief Algorithmのコンストラクタ
@@ -57,6 +58,12 @@ Solution Algorithm::run(const Solution::Type type)
 	{
 		IterativeBeamSearchAlgorithm iterativeBeamSearchAlgorithm(m_field);
 		solution = iterativeBeamSearchAlgorithm.run();
+		break;
+	}
+	case Solution::Type::ReplicaExchangeMonteCarlo:
+	{
+		ReplicaExchangeMonteCarlo replicaExchangeMonteCarlo(m_field);
+		solution = replicaExchangeMonteCarlo.run();
 		break;
 	}
 	
