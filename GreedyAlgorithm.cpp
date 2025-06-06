@@ -76,22 +76,6 @@ Solution GreedyAlgorithm::run()
 				break;
 			}
 		}
-		//// ランダムな点に導きを適用
-		//else {
-		//	// ランダムな点を選択
-		//	int x = Random(fieldSize - 1);
-		//	int y = Random(fieldSize - 1);
-		//	int size = Random(2, fieldSize - Max(x, y) + 1);
-		//	// フィールドを回転
-		//	currentField.rotate(x, y, size);
-		//	solution.add({ x, y, size });
-		//	improved = true;
-		//	// ランダムな確率で終了(焼きなまし)
-		//	if (Random(0.0, 1.0) < 0.8) {
-		//		improved = false;
-		//		break;
-		//	}
-		//}
 	}
 
 	return solution;

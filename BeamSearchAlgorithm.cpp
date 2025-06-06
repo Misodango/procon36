@@ -19,7 +19,7 @@ BeamSearchAlgorithm::BeamSearchAlgorithm(const Field& field, int32 beamWidth, in
 Solution BeamSearchAlgorithm::run() {
 	// 初期状態
 	std::priority_queue<BeamState> currentBeam;
-	currentBeam.push({ m_field, Solution(), m_field.evaluateState(), 0 });
+	currentBeam.push({ m_field, Solution(), m_field.evaluateStateWithEntropy(), 0 });
 
 	// 訪問済み状態を記録するハッシュセット
 	std::unordered_set<size_t> visited;
@@ -143,6 +143,7 @@ Solution BeamSearchAlgorithm::run() {
 							Field tempField = current_field_const_ref; // Local copy for modification
 							auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiff(x, y, s);
 							float newEntropy = tempField.evaluateStateWithEntropy();
+
 							float entropyDiff = newEntropy - oldEntropy;
 
 							bool hasUnpaired = false;

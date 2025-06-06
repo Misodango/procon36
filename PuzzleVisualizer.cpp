@@ -41,6 +41,8 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const Solution& so
 
 	m_closeButton = Rect(m_controlRect.x + 300, m_controlRect.y + 120, 80, 40);
 
+	m_hasClosedVisualizer = false;
+
 	// 操作の取得
 	for (int i = 0; i < solution.getOperationCount(); i++) {
 		int x, y, size;
@@ -67,7 +69,7 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const AsyncTask<So
 
 void PuzzleVisualizer::run()
 {
-	while (System::Update())
+	while (System::Update() && !m_hasClosedVisualizer)
 	{
 		// ウィンドウサイズの更新
 		m_windowWidth = Scene::Width();
@@ -282,7 +284,7 @@ void PuzzleVisualizer::handleInput()
 
 	// 閉じるボタン
 	if (m_closeButton.leftClicked()) {
-		exit(0);
+		m_hasClosedVisualizer = true;
 	}
 }
 
