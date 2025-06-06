@@ -166,7 +166,7 @@ Solution BeamSearchAlgorithm::run() {
 
 				operations.clear(); // Ensure it's empty before collecting results
 				operations.reserve(work_items.size()); // Reserve space based on total work items
-
+				bool isSorted = false;
 				for (auto& fut : futures) {
 					std::vector<Operation> thread_ops = fut.get();
 					operations.insert(operations.end(),

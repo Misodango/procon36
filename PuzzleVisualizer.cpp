@@ -339,7 +339,7 @@ void PuzzleVisualizer::drawField() const
 {
 	const int gridSize = m_initialField.getSize();
 	const int cellSize = Min(m_fieldRect.w, m_fieldRect.h) / gridSize;
-	static Array<Color> colors;
+	Array<Color> colors;
 	static const Font font(20);
 	static const double goldenRatioConjugate = 0.618033988749895;
 
