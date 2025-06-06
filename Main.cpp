@@ -145,7 +145,7 @@ void Main()
 
 			bool canSolve = algorithmInstance.has_value() && !solutionTask.has_value() && !solvedSolution.has_value();
 			if (SimpleGUI::Button(U"Solve Puzzle", Vec2{ 20, Scene::Height() - 100 }, 180, canSolve)) {
-				solutionTask = algorithmInstance->runAsync(Solution::Type::IterativeBeamSearch);
+				solutionTask = algorithmInstance->runAsync(Solution::Type::ReplicaExchangeMonteCarlo);
 				currentMode = AppMode::Solving;
 			}
 

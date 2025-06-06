@@ -17,6 +17,7 @@ struct Solution
 		BeamSearch,
 		SimulatedAnnealing,
 		IterativeBeamSearch,
+		ReplicaExchangeMonteCarlo,
 		// 他のアルゴリズムの種類を追加
 	};
 
