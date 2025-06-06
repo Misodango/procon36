@@ -610,6 +610,105 @@ float Field::evaluateState() const {
 	int32 consecutivePairsH = countPairsFromTopLeftHorizontal();
 	int32 consecutivePairsV = countPairsFromTopLeftVertical();
 	score += std::max(consecutivePairsH, consecutivePairsV) * ScoreFactorConsecutivePairs;
+
+	// 3. 各エンティティについて、ペアとなるもう一方への「回転距離」を評価
+	// 同じ数字の位置を記録する一時的なマップ
+	std::unordered_map<int32, std::vector<std::pair<int32, int32>>> entityPositions;
+
+	// 各エンティティの位置を記録
+	for (int32 y_coord = 0; y_coord < size; ++y_coord) {
+		for (int32 x_coord = 0; x_coord < size; ++x_coord) {
+			int32 entity = entities[y_coord][x_coord];
+			entityPositions[entity].push_back({ x_coord, y_coord });
+		}
+	}
+
+	float sumEuclideanDistUnformed = 0.0f;
+
+	// 各エンティティペアの「回転距離」を評価
+	for (const auto& [entity, positions_vec] : entityPositions) {
+		// 同じ数字が2つあるはず（ペアになる条件）
+		if (positions_vec.size() == 2) {
+			auto [x1, y1] = positions_vec[0];
+			auto [x2, y2] = positions_vec[1];
+
+			// 既にペアになっている場合はスコア加算（隣接している）
+			if (abs(x1 - x2) + abs(y1 - y2) == 1) {
+				score += ScoreFactorFormedPairBonus;
+				// For already formed pairs, Euclidean distance is 1.0, no penalty.
+				continue;
+			}
+
+			// Calculate Euclidean distance for unformed pairs
+			float dx_f = static_cast<float>(x1 - x2);
+			float dy_f = static_cast<float>(y1 - y2);
+			sumEuclideanDistUnformed += std::sqrt(dx_f * dx_f + dy_f * dy_f);
+
+
+			// 回転距離の計算：
+			// 1. マンハッタン距離の逆数をベースにする
+			int32 manhattanDist = abs(x1 - x2) + abs(y1 - y2);
+
+			// マンハッタン距離が小さいほど良い（大きいほど悪い）
+			float distanceScore = ScoreFactorUnformedPairBase / static_cast<float>(manhattanDist + 1);
+			score += distanceScore;
+
+			// 同じ行または列にある場合はボーナス
+			if (x1 == x2 || y1 == y2) {
+				score += ScoreFactorUnformedPairSameRowColBonus;
+			}
+			// 対角線上にある場合は小さなボーナス
+			else if (abs(x1 - x2) == abs(y1 - y2)) {
+				score += ScoreFactorUnformedPairDiagonalBonus;
+			}
+
+			// 推定回転数に基づくペナルティ
+			// より複雑な位置関係は回転数が多くなる傾向があるため
+			int32 estimatedRotations = std::max(abs(x1 - x2), abs(y1 - y2));
+			score -= estimatedRotations * ScoreFactorUnformedPairEstRotPenalty;
+		}
+	}
+
+	// 4. ユークリッド距離による評価 - 距離が短いほど良い
+	score -= sumEuclideanDistUnformed * ScoreFactorEuclideanDistance;
+
+	// 5. 2x2パターンの評価（局所的な完成度を見る）
+	int32 count2x2Patterns = 0;
+	for (int32 y = 0; y <= size - 2; ++y) {
+		for (int32 x = 0; x <= size - 2; ++x) {
+			// 2x2領域内でペアが形成されているかチェック
+			int32 pairsIn2x2 = 0;
+			std::unordered_set<int32> seen;
+			for (int32 dy = 0; dy < 2; ++dy) {
+				for (int32 dx = 0; dx < 2; ++dx) {
+					int32 entity = entities[y + dy][x + dx];
+					if (entity > 0 && seen.find(entity) == seen.end() && isPair(x + dx, y + dy)) {
+						pairsIn2x2++;
+						seen.insert(entity);
+					}
+				}
+			}
+			if (pairsIn2x2 >= 2) { // 2x2領域内に2つ以上のペアがある場合
+				count2x2Patterns++;
+			}
+		}
+	}
+	score += count2x2Patterns * ScoreFactor2x2Pattern;
+
+	// 6. 未ペアエンティティのマンハッタン距離ペナルティ
+	for (const auto& [entity, positions_vec] : entityPositions) {
+		if (positions_vec.size() == 2) {
+			auto [x1, y1] = positions_vec[0];
+			auto [x2, y2] = positions_vec[1];
+
+			// 未ペアの場合のみペナルティを適用
+			if (abs(x1 - x2) + abs(y1 - y2) != 1) {
+				int32 manhattanDist = abs(x1 - x2) + abs(y1 - y2);
+				score -= manhattanDist * ManhattanPenaltyFactorUnpaired;
+			}
+		}
+	}
+
 	return score;
 }
 
