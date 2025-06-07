@@ -805,6 +805,7 @@ float Field::calculateShannonEntropy(const std::map<int32, int32>& frequencies, 
 			entropy -= probability * std::log2f(probability);
 		}
 	}
+	entropy /= std::log2f(totalCount); // 正規化
 	return entropy;
 }
 
@@ -973,4 +974,264 @@ float Field::evaluateStateWithEntropy() const {
 
 	// 最終的なスコア
 	return baseScore + entropyScore;
+}
+
+/*
+* @brief Calculate Positional Entropy for a local region
+* @param r_start_x Starting X coordinate of the region
+* @param r_start_y Starting Y coordinate of the region
+* @param r_size Size of the region
+* @return float Positional entropy for the region
+*/
+float Field::calculateLocalPositionalEntropy(int r_start_x, int r_start_y, int r_size) const {
+	if (entityCount == 0) return 0.0f;
+	std::map<int32, int32> counts;
+	int totalCellsInRegion = 0;
+	for (int i = 0; i < r_size; ++i) {
+		for (int j = 0; j < r_size; ++j) {
+			int x = r_start_x + i;
+			int y = r_start_y + j;
+			if (x < size && y < size) { // Ensure within bounds
+				counts[entities[y][x]]++;
+				totalCellsInRegion++;
+			}
+		}
+	}
+
+	if (totalCellsInRegion == 0) return 0.0f;
+
+	float entropy = 0.0f;
+	for (auto const& [entity, count] : counts) {
+		if (count > 0) {
+			float p = static_cast<float>(count) / totalCellsInRegion;
+			entropy -= p * std::log2(p);
+		}
+	}
+	return entropy;
+}
+
+/*
+* @brief Calculate Clustering Coefficient for a local region
+* @param r_start_x Starting X coordinate of the region
+* @param r_start_y Starting Y coordinate of the region
+* @param r_size Size of the region
+* @return float Clustering coefficient for the region
+*/
+float Field::calculateLocalClusteringCoefficient(int r_start_x, int r_start_y, int r_size) const {
+	if (entityCount == 0) return 0.0f;
+	float totalClusteringCoefficient = 0.0f;
+	int cellsInRegion = 0;
+
+	for (int i = 0; i < r_size; ++i) {
+		for (int j = 0; j < r_size; ++j) {
+			int x = r_start_x + i;
+			int y = r_start_y + j;
+
+			if (x >= size || y >= size) continue; // Skip if center is out of bounds
+			cellsInRegion++;
+
+			int32 currentEntity = entities[y][x];
+			if (currentEntity == 0) continue; // Skip empty cells or boundary markers
+
+			int sameTypeNeighbors = 0;
+			int totalNeighbors = 0;
+
+			for (int dx = -1; dx <= 1; ++dx) {
+				for (int dy = -1; dy <= 1; ++dy) {
+					if (dx == 0 && dy == 0) continue;
+					int nx = x + dx;
+					int ny = y + dy;
+
+					if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+						totalNeighbors++;
+						if (entities[ny][nx] == currentEntity) {
+							sameTypeNeighbors++;
+						}
+					}
+				}
+			}
+			if (totalNeighbors > 0) {
+				totalClusteringCoefficient += static_cast<float>(sameTypeNeighbors) / totalNeighbors;
+			}
+		}
+	}
+	return cellsInRegion > 0 ? totalClusteringCoefficient / cellsInRegion : 0.0f;
+}
+
+/*
+* @brief Calculate Local Order for a local region
+* @param r_start_x Starting X coordinate of the region
+* @param r_start_y Starting Y coordinate of the region
+* @param r_size Size of the region
+* @return float Local order score for the region
+*/
+float Field::calculateLocalLocalOrder(int r_start_x, int r_start_y, int r_size) const {
+	int pairedCells = 0;
+	int totalCellsInRegion = 0;
+	for (int i = 0; i < r_size; ++i) {
+		for (int j = 0; j < r_size; ++j) {
+			int x = r_start_x + i;
+			int y = r_start_y + j;
+			if (x < size && y < size) { // Ensure within bounds
+				totalCellsInRegion++;
+				if (isPair(x, y)) {
+					pairedCells++;
+				}
+			}
+		}
+	}
+	return totalCellsInRegion > 0 ? static_cast<float>(pairedCells) / totalCellsInRegion : 0.0f;
+}
+
+/*
+* @brief Calculate Pair Completion for a local region
+* @param r_start_x Starting X coordinate of the region
+* @param r_start_y Starting Y coordinate of the region
+* @param r_size Size of the region
+* @return float Pair completion score for the region
+*/
+float Field::calculateLocalPairCompletion(int r_start_x, int r_start_y, int r_size) const {
+	int pairsInRegion = 0;
+	int possiblePairsInRegion = 0; // Max pairs if all cells in region were part of a pair within the region
+
+	std::vector<std::vector<bool>> visited(r_size, std::vector<bool>(r_size, false));
+
+	for (int i = 0; i < r_size; ++i) {
+		for (int j = 0; j < r_size; ++j) {
+			int x = r_start_x + i;
+			int y = r_start_y + j;
+
+			if (x >= size || y >= size || entities[y][x] == 0) continue;
+			
+			possiblePairsInRegion++; // Each non-empty cell could potentially form one end of a pair
+
+			if (visited[i][j]) continue;
+
+			// Check right neighbor (within the local r_size x r_size region)
+			if (j + 1 < r_size) { // Internal horizontal edge
+				int nx_local = i;
+				int ny_local = j + 1;
+				int nx_global = r_start_x + nx_local;
+				int ny_global = r_start_y + ny_local;
+
+				if (nx_global < size && ny_global < size && entities[y][x] == entities[ny_global][nx_global] && entities[y][x] != 0) {
+					pairsInRegion++;
+					visited[i][j] = true;
+					visited[nx_local][ny_local] = true; 
+					continue; 
+				}
+			}
+			// Check bottom neighbor (within the local r_size x r_size region)
+			if (i + 1 < r_size) { // Internal vertical edge
+				int nx_local = i + 1;
+				int ny_local = j;
+				int nx_global = r_start_x + nx_local;
+				int ny_global = r_start_y + ny_local;
+				if (nx_global < size && ny_global < size && entities[y][x] == entities[ny_global][nx_global] && entities[y][x] != 0) {
+					pairsInRegion++;
+					visited[i][j] = true;
+					visited[nx_local][ny_local] = true;
+				}
+			}
+		}
+	}
+	// possiblePairsInRegion is divided by 2 because each pair involves two cells.
+	return (possiblePairsInRegion > 0) ? static_cast<float>(pairsInRegion) / (possiblePairsInRegion / 2.0f) : 0.0f;
+}
+
+/*
+* @brief Calculate Edge Smoothness for a local region
+* @param r_start_x Starting X coordinate of the region
+* @param r_start_y Starting Y coordinate of the region
+* @param r_size Size of the region
+* @return float Edge smoothness score for the region
+*/
+float Field::calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_size) const {
+	int smoothEdges = 0;
+	int totalEdges = 0;
+
+	for (int i = 0; i < r_size; ++i) {
+		for (int j = 0; j < r_size; ++j) {
+			int x = r_start_x + i;
+			int y = r_start_y + j;
+
+			if (x >= size || y >= size) continue;
+
+			// Check horizontal edge (with cell to the right)
+			if (j + 1 < r_size) { // Internal horizontal edge
+				int nx = x;
+				int ny = r_start_y + j + 1;
+				if (ny < size) {
+					totalEdges++;
+					if (entities[y][x] == entities[ny][nx] || entities[y][x] == 0 || entities[ny][nx] == 0) {
+						smoothEdges++;
+					}
+				}
+			} else if (y + 1 < size) { // Boundary horizontal edge (with cell outside subgrid but inside main grid)
+				 totalEdges++;
+				 if (entities[y][x] == entities[y+1][x] || entities[y][x] == 0 || entities[y+1][x] == 0) {
+					smoothEdges++;
+				 }
+			}
+
+
+			// Check vertical edge (with cell below)
+			if (i + 1 < r_size) { // Internal vertical edge
+				int nx = r_start_x + i + 1;
+				int ny = y;
+				if (nx < size) {
+					totalEdges++;
+					if (entities[y][x] == entities[ny][nx] || entities[y][x] == 0 || entities[ny][nx] == 0) {
+						smoothEdges++;
+					}
+				}
+			} else if (x + 1 < size) { // Boundary vertical edge
+				totalEdges++;
+				if (entities[y][x] == entities[y][x+1] || entities[y][x] == 0 || entities[y][x+1] == 0) {
+					smoothEdges++;
+				}
+			}
+		}
+	}
+	return totalEdges > 0 ? static_cast<float>(smoothEdges) / totalEdges : 0.0f;
+}
+
+/*
+* @brief Calculate entropy difference for a rotation operation
+* @param op_x X coordinate of the operation
+* @param op_y Y coordinate of the operation
+* @param op_size Size of the operation
+* @return float Entropy difference due to the rotation
+*/
+float Field::calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) const {
+	// Weights (should be consistent with evaluateStateWithEntropy)
+	float w_h = -0.1f; 
+	float w_c = 0.2f;  
+	float w_lo = 0.4f; 
+	float w_pc = 0.5f; 
+	float w_es = 0.3f; 
+
+	// 1. Calculate sum of local scores for the region BEFORE rotation
+	float old_local_h = calculateLocalPositionalEntropy(op_x, op_y, op_size);
+	float old_local_c = calculateLocalClusteringCoefficient(op_x, op_y, op_size);
+	float old_local_lo = calculateLocalLocalOrder(op_x, op_y, op_size);
+	float old_local_pc = calculateLocalPairCompletion(op_x, op_y, op_size);
+	float old_local_es = calculateLocalEdgeSmoothness(op_x, op_y, op_size);
+	
+	float old_local_score_sum = w_h * old_local_h + w_c * old_local_c + w_lo * old_local_lo + w_pc * old_local_pc + w_es * old_local_es;
+
+	// 2. Create a temporary field, apply rotation, and calculate sum of local scores AFTER rotation
+	Field tempField = *this;
+	tempField.rotate(op_x, op_y, op_size);
+
+	float new_local_h = tempField.calculateLocalPositionalEntropy(op_x, op_y, op_size);
+	float new_local_c = tempField.calculateLocalClusteringCoefficient(op_x, op_y, op_size);
+	float new_local_lo = tempField.calculateLocalLocalOrder(op_x, op_y, op_size);
+	float new_local_pc = tempField.calculateLocalPairCompletion(op_x, op_y, op_size);
+	float new_local_es = tempField.calculateLocalEdgeSmoothness(op_x, op_y, op_size);
+
+	float new_local_score_sum = w_h * new_local_h + w_c * new_local_c + w_lo * new_local_lo + w_pc * new_local_pc + w_es * new_local_es;
+
+	// 3. The difference is the change in score due to the rotation in that local area.
+	return new_local_score_sum - old_local_score_sum;
 }

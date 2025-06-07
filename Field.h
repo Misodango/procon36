@@ -89,6 +89,8 @@ public:
 
 	// フィールドの評価値を計算する（ビームサーチ用）
 	float evaluateState() const;
+	float evaluateStateWithEntropy() const;
+	float calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) const;
 
 	// Zobrist Hashing related members
 	static std::vector<std::vector<std::vector<uint64_t>>> zobristTable;
@@ -113,22 +115,20 @@ public:
 
 	bool isValidRotation(int32 x, int32 y, int32 n) const;
 
-	std::pair<int32, float> rotateAndGetDiffUltraFast(int32 x, int32 y, int32 n);
-
 	float calculateShannonEntropy(const std::map<int32, int32>& frequencies, int32 totalCount) const;
 	float calculatePositionalEntropy(int32 windowSize = 3) const;
 	float calculateClusteringCoefficient() const;
 	float calculateLocalOrder() const;
 
 	float calculateEntropyScore() const;
-	float evaluateStateWithEntropy() const;
-
-	// 並列化されたエントロピー計算関数
-	float calculatePositionalEntropyParallel(int32 windowSize = 3) const;
-	float calculateClusteringCoefficientParallel() const;
-	float calculateLocalOrderParallel() const;
-	float calculateEntropyScoreParallel() const;
-	float evaluateStateWithEntropyParallel() const;
 
 	Field() = default;
+
+private:
+	// Helper methods for calculateEntropyDiffForRotation
+	float calculateLocalPositionalEntropy(int r_start_x, int r_start_y, int r_size) const;
+	float calculateLocalClusteringCoefficient(int r_start_x, int r_start_y, int r_size) const;
+	float calculateLocalLocalOrder(int r_start_x, int r_start_y, int r_size) const;
+	float calculateLocalPairCompletion(int r_start_x, int r_start_y, int r_size) const;
+	float calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_size) const;
 };

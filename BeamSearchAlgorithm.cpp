@@ -129,8 +129,6 @@ Solution BeamSearchAlgorithm::run() {
 						// Estimate based on chunk size, can be refined
 						local_thread_operations.reserve(end_idx - start_idx); 
 
-						float oldEntropy = current_field_const_ref.evaluateStateWithEntropy();
-
 						for (size_t item_idx = start_idx; item_idx < end_idx; ++item_idx) {
 							const auto& item = work_items[item_idx];
 							const int32 s = item.s;
@@ -140,11 +138,12 @@ Solution BeamSearchAlgorithm::run() {
 							// Original loop's core logic
 							if (current_field_const_ref.isPairRight(x, y)) continue;
 
-							Field tempField = current_field_const_ref; // Local copy for modification
-							auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiff(x, y, s);
-							float newEntropy = tempField.evaluateStateWithEntropy();
+							Field tempFieldForDiff = current_field_const_ref; // Copy for rotateAndGetDiff
+							auto [pairDiff, scoreDiff] = tempFieldForDiff.rotateAndGetDiff(x, y, s);
 
-							float entropyDiff = newEntropy - oldEntropy;
+							// Calculate entropy diff using the new differential method
+							// This is called on the state *before* the rotation.
+							float entropyDiff = current_field_const_ref.calculateEntropyDiffForRotation(x, y, s);
 
 							bool hasUnpaired = false;
 							for (int r_i = 0; r_i < s; ++r_i) {
