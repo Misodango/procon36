@@ -20,6 +20,8 @@ public:
 	// コンストラクタでフィールドを初期化
 	Field(int32 size);
 
+	Field(int32 size, bool isComplete, int32 seed = -1);
+
 	// コピーコンストラクタ
 	Field(const Field& other);
 
@@ -123,6 +125,12 @@ public:
 	float calculateEntropyScore() const;
 
 	Field() = default;
+
+	// 学習データ生成
+	// ランダムに揃った盤面
+	Field generateRandomCompleteField(int32 size);
+
+
 
 private:
 	// Helper methods for calculateEntropyDiffForRotation

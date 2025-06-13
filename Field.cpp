@@ -1,4 +1,5 @@
 ﻿#include "Field.h"
+#include "DominoTiling.h"
 #include <Siv3D.hpp> // Siv3Dの機能を使用
 #include <chrono>    // For seeding RNG
 #include <cmath>     // For Euclidean distance calculations
@@ -53,6 +54,29 @@ namespace {
 */
 
 Field::Field(int32 size) : size(size), entityCount(size* size / 2 - 1), entities(size, size, 0) {}
+
+/*
+*  @brief フィールドのコンストラクタ
+*  @param size フィールドのサイズ
+*  @param isCompleted 完了状態かどうか
+*  @return 完了状態のフィールド
+*/
+
+Field::Field(int32 size, bool isCompleted, int32 seed) : Field(size) {
+	if (!isCompleted) {
+		Field::random(size);
+		return;
+	}
+
+	DominoTiling dominoTiling(size);
+
+	if (seed == -1) {
+		seed = Random(dominoTiling.getPatternCount());
+	}
+	Console << dominoTiling.getPattern(seed);
+	entities = dominoTiling.getPattern(seed);
+	assert(entities != Grid<int32>());
+}
 
 /*
 *  @brief フィールドのコピーコンストラクタ
@@ -1102,7 +1126,7 @@ float Field::calculateLocalPairCompletion(int r_start_x, int r_start_y, int r_si
 			int y = r_start_y + j;
 
 			if (x >= size || y >= size || entities[y][x] == 0) continue;
-			
+
 			possiblePairsInRegion++; // Each non-empty cell could potentially form one end of a pair
 
 			if (visited[i][j]) continue;
@@ -1117,8 +1141,8 @@ float Field::calculateLocalPairCompletion(int r_start_x, int r_start_y, int r_si
 				if (nx_global < size && ny_global < size && entities[y][x] == entities[ny_global][nx_global] && entities[y][x] != 0) {
 					pairsInRegion++;
 					visited[i][j] = true;
-					visited[nx_local][ny_local] = true; 
-					continue; 
+					visited[nx_local][ny_local] = true;
+					continue;
 				}
 			}
 			// Check bottom neighbor (within the local r_size x r_size region)
@@ -1167,11 +1191,12 @@ float Field::calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_si
 						smoothEdges++;
 					}
 				}
-			} else if (y + 1 < size) { // Boundary horizontal edge (with cell outside subgrid but inside main grid)
-				 totalEdges++;
-				 if (entities[y][x] == entities[y+1][x] || entities[y][x] == 0 || entities[y+1][x] == 0) {
+			}
+			else if (y + 1 < size) { // Boundary horizontal edge (with cell outside subgrid but inside main grid)
+				totalEdges++;
+				if (entities[y][x] == entities[y + 1][x] || entities[y][x] == 0 || entities[y + 1][x] == 0) {
 					smoothEdges++;
-				 }
+				}
 			}
 
 
@@ -1185,9 +1210,10 @@ float Field::calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_si
 						smoothEdges++;
 					}
 				}
-			} else if (x + 1 < size) { // Boundary vertical edge
+			}
+			else if (x + 1 < size) { // Boundary vertical edge
 				totalEdges++;
-				if (entities[y][x] == entities[y][x+1] || entities[y][x] == 0 || entities[y][x+1] == 0) {
+				if (entities[y][x] == entities[y][x + 1] || entities[y][x] == 0 || entities[y][x + 1] == 0) {
 					smoothEdges++;
 				}
 			}
@@ -1205,11 +1231,11 @@ float Field::calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_si
 */
 float Field::calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) const {
 	// Weights (should be consistent with evaluateStateWithEntropy)
-	float w_h = -0.1f; 
-	float w_c = 0.2f;  
-	float w_lo = 0.4f; 
-	float w_pc = 0.5f; 
-	float w_es = 0.3f; 
+	float w_h = -0.1f;
+	float w_c = 0.2f;
+	float w_lo = 0.4f;
+	float w_pc = 0.5f;
+	float w_es = 0.3f;
 
 	// 1. Calculate sum of local scores for the region BEFORE rotation
 	float old_local_h = calculateLocalPositionalEntropy(op_x, op_y, op_size);
@@ -1217,7 +1243,7 @@ float Field::calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) co
 	float old_local_lo = calculateLocalLocalOrder(op_x, op_y, op_size);
 	float old_local_pc = calculateLocalPairCompletion(op_x, op_y, op_size);
 	float old_local_es = calculateLocalEdgeSmoothness(op_x, op_y, op_size);
-	
+
 	float old_local_score_sum = w_h * old_local_h + w_c * old_local_c + w_lo * old_local_lo + w_pc * old_local_pc + w_es * old_local_es;
 
 	// 2. Create a temporary field, apply rotation, and calculate sum of local scores AFTER rotation
