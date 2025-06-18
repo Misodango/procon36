@@ -73,7 +73,6 @@ Field::Field(int32 size, bool isCompleted, int32 seed) : Field(size) {
 	if (seed == -1) {
 		seed = Random(dominoTiling.getPatternCount());
 	}
-	Console << dominoTiling.getPattern(seed);
 	entities = dominoTiling.getPattern(seed);
 	assert(entities != Grid<int32>());
 }
@@ -189,6 +188,36 @@ void Field::rotate(int32 x, int32 y, int32 n) {
 	for (int32 i = 0; i < n; ++i) {
 		for (int32 j = 0; j < n; ++j) {
 			entities[y + j][x + n - 1 - i] = temp[i][j];
+		}
+	}
+}
+
+/*
+* @brief 任意の座標に導きを適用（逆回転）
+* @param x x座標 y y座標 n サイズ
+* @return void
+*/
+
+void Field::rotateReverse(int32 x, int32 y, int32 n) {
+	// 範囲外チェック
+	if (x < 0 || y < 0 || x + n > size || y + n > size) {
+		return;
+	}
+	// n <= 1の回転は無効
+	if (n <= 1) {
+		return;
+	}
+	Grid<int32> temp(n, n);
+	// 回転前の値を一時的な配列にコピー
+	for (int32 i = 0; i < n; ++i) {
+		for (int32 j = 0; j < n; ++j) {
+			temp[i][j] = entities[y + i][x + j];
+		}
+	}
+	// 90度反時計回りに回転させて元の配列にコピー
+	for (int32 i = 0; i < n; ++i) {
+		for (int32 j = 0; j < n; ++j) {
+			entities[y + n - 1 - j][x + i] = temp[i][j];
 		}
 	}
 }
@@ -1260,4 +1289,15 @@ float Field::calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) co
 
 	// 3. The difference is the change in score due to the rotation in that local area.
 	return new_local_score_sum - old_local_score_sum;
+}
+
+Array<Field> Field::generateRandomCompleteFieldsAll() {
+	DominoTiling dominoTiling(size);
+	Array<Field> completeFields;
+	for(const auto& field : dominoTiling.getAllPatterns()) {
+		Field newField(size, entityCount);
+		newField.entities = field;
+		completeFields.push_back(newField);
+	}
+	return completeFields;
 }

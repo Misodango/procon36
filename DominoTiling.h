@@ -25,4 +25,12 @@ public:
 	Grid<int32> getPattern(int32 index) const;
 
 	int32 getPatternCount() const;
+
+	// Returns a specified number of generated patterns.
+	// If count is less than or equal to 0, an empty array is returned.
+	// If count is greater than the total number of stored patterns, all available patterns are returned.
+	Array<Grid<int32>> getManyPatterns(int32 count) const;
+
+	// メモリ使用量が多すぎるので注意
+	Array<Grid<int32>> getAllPatterns() const;
 };

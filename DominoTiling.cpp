@@ -120,6 +120,10 @@ Grid<int32> DominoTiling::getPattern(int32 index) const {
 		return Grid<int32>();
 	}
 
+	if (index == -1) {
+		index = Random(m_allPatterns.size());
+	}
+
 	const Grid<int32>& pattern = m_allPatterns[index];
 
 	Grid<int32> numberedPattern(m_n, m_n);
@@ -144,6 +148,26 @@ Grid<int32> DominoTiling::getPattern(int32 index) const {
 
 	return numberedPattern;
 }
+
 int32 DominoTiling::getPatternCount() const {
 	return static_cast<int32>(m_allPatterns.size());
+}
+
+Array<Grid<int32>> DominoTiling::getManyPatterns(int32 count) const {
+	if (count <= 0) {
+		return Array<Grid<int32>>();
+	}
+
+	Array<Grid<int32>> result;
+	int32 numToCopy = std::min(count, static_cast<int32>(m_allPatterns.size()));
+
+	for (int32 i = 0; i < numToCopy; ++i) {
+		result.emplace_back(getPattern(i)); // Use getPattern to get the numbered version
+	}
+	return result;
+}
+
+// メモリ使用量が多すぎるので注意
+Array<Grid<int32>> DominoTiling::getAllPatterns() const {
+	return m_allPatterns;
 }

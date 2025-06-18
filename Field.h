@@ -38,6 +38,9 @@ public:
 	// 指定した範囲を右方向に90度回転させる関数
 	void rotate(int32 x, int32 y, int32 n);
 
+	// 指定した範囲を左方向に90度回転させる関数
+	void rotateReverse(int32 x, int32 y, int32 n);
+
 	// フィールドを描画する関数
 	void draw() const;
 
@@ -128,9 +131,7 @@ public:
 
 	// 学習データ生成
 	// ランダムに揃った盤面
-	Field generateRandomCompleteField(int32 size);
-
-
+	Array<Field> generateRandomCompleteFieldsAll();
 
 private:
 	// Helper methods for calculateEntropyDiffForRotation
