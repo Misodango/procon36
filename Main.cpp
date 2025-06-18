@@ -122,7 +122,8 @@ void Main()
 
 
 			if (SimpleGUI::Button(U"Start Game", Vec2{ 20, 200 })) {
-				currentField.emplace(Field::random(selectedBoardSize));
+				// currentField.emplace(Field::random(selectedBoardSize));
+				currentField = Field::random(selectedBoardSize); // Create a new field with the selected size
 				algorithmInstance.emplace(*currentField);
 				solvedSolution.reset(); // Clear any previous solution
 				solutionTask.reset();   // Clear any ongoing solving task
@@ -145,7 +146,7 @@ void Main()
 
 			bool canSolve = algorithmInstance.has_value() && !solutionTask.has_value() && !solvedSolution.has_value();
 			if (SimpleGUI::Button(U"Solve Puzzle", Vec2{ 20, Scene::Height() - 100 }, 180, canSolve)) {
-				solutionTask = algorithmInstance->runAsync(Solution::Type::ReplicaExchangeMonteCarlo);
+				solutionTask = algorithmInstance->runAsync(Solution::Type::IterativeBeamSearch);
 				currentMode = AppMode::Solving;
 			}
 

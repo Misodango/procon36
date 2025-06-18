@@ -20,6 +20,8 @@ public:
 	// コンストラクタでフィールドを初期化
 	Field(int32 size);
 
+	Field(int32 size, bool isComplete, int32 seed = -1);
+
 	// コピーコンストラクタ
 	Field(const Field& other);
 
@@ -35,6 +37,9 @@ public:
 
 	// 指定した範囲を右方向に90度回転させる関数
 	void rotate(int32 x, int32 y, int32 n);
+
+	// 指定した範囲を左方向に90度回転させる関数
+	void rotateReverse(int32 x, int32 y, int32 n);
 
 	// フィールドを描画する関数
 	void draw() const;
@@ -89,6 +94,8 @@ public:
 
 	// フィールドの評価値を計算する（ビームサーチ用）
 	float evaluateState() const;
+	float evaluateStateWithEntropy() const;
+	float calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) const;
 
 	// Zobrist Hashing related members
 	static std::vector<std::vector<std::vector<uint64_t>>> zobristTable;
@@ -113,22 +120,24 @@ public:
 
 	bool isValidRotation(int32 x, int32 y, int32 n) const;
 
-	std::pair<int32, float> rotateAndGetDiffUltraFast(int32 x, int32 y, int32 n);
-
 	float calculateShannonEntropy(const std::map<int32, int32>& frequencies, int32 totalCount) const;
 	float calculatePositionalEntropy(int32 windowSize = 3) const;
 	float calculateClusteringCoefficient() const;
 	float calculateLocalOrder() const;
 
 	float calculateEntropyScore() const;
-	float evaluateStateWithEntropy() const;
-
-	// 並列化されたエントロピー計算関数
-	float calculatePositionalEntropyParallel(int32 windowSize = 3) const;
-	float calculateClusteringCoefficientParallel() const;
-	float calculateLocalOrderParallel() const;
-	float calculateEntropyScoreParallel() const;
-	float evaluateStateWithEntropyParallel() const;
 
 	Field() = default;
+
+	// 学習データ生成
+	// ランダムに揃った盤面
+	Array<Field> generateRandomCompleteFieldsAll();
+
+private:
+	// Helper methods for calculateEntropyDiffForRotation
+	float calculateLocalPositionalEntropy(int r_start_x, int r_start_y, int r_size) const;
+	float calculateLocalClusteringCoefficient(int r_start_x, int r_start_y, int r_size) const;
+	float calculateLocalLocalOrder(int r_start_x, int r_start_y, int r_size) const;
+	float calculateLocalPairCompletion(int r_start_x, int r_start_y, int r_size) const;
+	float calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_size) const;
 };

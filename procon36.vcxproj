@@ -118,6 +118,7 @@
     <ClCompile Include="Algorithm.cpp" />
     <ClCompile Include="BeamSearchAlgorithm.cpp" />
     <ClCompile Include="BFSAlgorithm.cpp" />
+    <ClCompile Include="DominoTiling.cpp" />
     <ClCompile Include="Field.cpp" />
     <ClCompile Include="GreedyAlgorithm.cpp" />
     <ClCompile Include="IterativeBeamSearchAlgorithm.cpp" />
@@ -346,6 +347,7 @@
     <ClInclude Include="IterativeBeamSearchAlgorithm.h" />
     <ClInclude Include="JsonParser.h" />
     <ClInclude Include="NetWorkManager.h" />
+    <ClInclude Include="DominoTiling.h" />
     <ClInclude Include="PuzzleVisualizer.h" />
     <ClInclude Include="ReplicaExchangeMonteCarlo.h" />
     <ClInclude Include="SimulatedAnnealingAlgorithm.h" />
