@@ -123,7 +123,7 @@ void Main()
 
 			if (SimpleGUI::Button(U"Start Game", Vec2{ 20, 200 })) {
 				// currentField.emplace(Field::random(selectedBoardSize));
-				currentField = Field::Field(selectedBoardSize, true); // Create a new field with the selected size
+				currentField = Field::random(selectedBoardSize); // Create a new field with the selected size
 				algorithmInstance.emplace(*currentField);
 				solvedSolution.reset(); // Clear any previous solution
 				solutionTask.reset();   // Clear any ongoing solving task
