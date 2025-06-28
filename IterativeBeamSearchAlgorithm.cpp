@@ -24,6 +24,12 @@ Solution IterativeBeamSearchAlgorithm::run() {
 	totalStopwatch.start();
 
 	for (int32 step = 0; step < m_maxTotalSteps; ++step) {
+		// Check if total time exceeds 300s
+		if (totalStopwatch.s() >= 250) {
+			Print << U"IterativeBeamSearch: Time limit of 300 seconds reached, ending search early.";
+			break;
+		}
+
 		Print << U"Iterative Step: {}"_fmt(step + 1);
 
 		BeamSearchAlgorithm beamStep(m_currentField, m_beamWidthPerStep, m_depthPerStep);
