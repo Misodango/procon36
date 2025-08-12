@@ -64,3 +64,19 @@ Solution Solution::fromJSON(const JSON& json) {
 bool Solution::isEmpty() const {
 	return ops.empty();
 }
+
+JSON Solution::toSubmissionJSON() const
+{
+	JSON json;
+	Array<JSON> opsArray;
+
+	for (const auto& op : ops) {
+		JSON opJSON;
+		opJSON[U"x"] = op.x;
+		opJSON[U"y"] = op.y;
+		opJSON[U"n"] = op.n;
+		opsArray.emplace_back(opJSON);
+	}
+	json[U"ops"] = opsArray;
+	return json;
+}
