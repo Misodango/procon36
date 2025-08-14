@@ -48,8 +48,7 @@ Solution BeamSearchAlgorithm::run() {
 		while (!currentBeam.empty() && statesExamined < m_beamWidth) {
 			if (stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
 				Print << U"Beam search internal timeout of {}s reached during state expansion at depth {}."_fmt(INTERNAL_TIMEOUT_SECONDS, depth);
-				timeoutOccurred = true; // Set flag to indicate timeout
-				break; // Break out of the inner loop
+				goto timeout_exit_label; // Using goto to break out of nested loops, ensure label is defined after loops.
 			}
 			BeamState current = currentBeam.top();
 			currentBeam.pop();
@@ -98,12 +97,12 @@ Solution BeamSearchAlgorithm::run() {
 			struct WorkItem { int32 s, x, y; };
 			std::vector<WorkItem> work_items;
 			// Estimate max possible operations to reserve space, can be refined
-			work_items.reserve(fieldSize * fieldSize * fieldSize); 
+			work_items.reserve(fieldSize * fieldSize * fieldSize);
 
 			for (int32 s_loop = fieldSize - 1; s_loop >= 2; --s_loop) {
 				for (int32 x_loop = 0; x_loop <= fieldSize - s_loop; ++x_loop) {
 					for (int32 y_loop = 0; y_loop <= fieldSize - s_loop; ++y_loop) {
-						work_items.push_back({s_loop, x_loop, y_loop});
+						work_items.push_back({ s_loop, x_loop, y_loop });
 					}
 				}
 			}
@@ -126,42 +125,42 @@ Solution BeamSearchAlgorithm::run() {
 
 					futures.emplace_back(std::async(std::launch::async,
 						[&work_items, start_idx, end_idx, &current_field_const_ref]() {
-						std::vector<Operation> local_thread_operations;
-						// Estimate based on chunk size, can be refined
-						local_thread_operations.reserve(end_idx - start_idx); 
+							std::vector<Operation> local_thread_operations;
+							// Estimate based on chunk size, can be refined
+							local_thread_operations.reserve(end_idx - start_idx);
 
-						for (size_t item_idx = start_idx; item_idx < end_idx; ++item_idx) {
-							const auto& item = work_items[item_idx];
-							const int32 s = item.s;
-							const int32 x = item.x;
-							const int32 y = item.y;
+							for (size_t item_idx = start_idx; item_idx < end_idx; ++item_idx) {
+								const auto& item = work_items[item_idx];
+								const int32 s = item.s;
+								const int32 x = item.x;
+								const int32 y = item.y;
 
-							// Original loop's core logic
-							if (current_field_const_ref.isPairRight(x, y)) continue;
+								// Original loop's core logic
+								if (current_field_const_ref.isPairRight(x, y)) continue;
 
-							Field tempFieldForDiff = current_field_const_ref; // Copy for rotateAndGetDiff
-							auto [pairDiff, scoreDiff] = tempFieldForDiff.rotateAndGetDiff(x, y, s);
+								Field tempFieldForDiff = current_field_const_ref; // Copy for rotateAndGetDiff
+								auto [pairDiff, scoreDiff] = tempFieldForDiff.rotateAndGetDiff(x, y, s);
 
-							// Calculate entropy diff using the new differential method
-							// This is called on the state *before* the rotation.
-							float entropyDiff = current_field_const_ref.calculateEntropyDiffForRotation(x, y, s);
+								// Calculate entropy diff using the new differential method
+								// This is called on the state *before* the rotation.
+								float entropyDiff = current_field_const_ref.calculateEntropyDiffForRotation(x, y, s);
 
-							bool hasUnpaired = false;
-							for (int r_i = 0; r_i < s; ++r_i) {
-								for (int r_j = 0; r_j < s; ++r_j) {
-									if (!current_field_const_ref.isPair(x + r_i, y + r_j)) {
-										hasUnpaired = true;
-										break;
+								bool hasUnpaired = false;
+								for (int r_i = 0; r_i < s; ++r_i) {
+									for (int r_j = 0; r_j < s; ++r_j) {
+										if (!current_field_const_ref.isPair(x + r_i, y + r_j)) {
+											hasUnpaired = true;
+											break;
+										}
 									}
+									if (hasUnpaired) break;
 								}
-								if (hasUnpaired) break;
+
+								bool isPromising = (pairDiff > 0 || scoreDiff > 0.0f) && hasUnpaired;
+								local_thread_operations.push_back({ x, y, s, pairDiff, scoreDiff, isPromising, entropyDiff });
 							}
-							
-							bool isPromising = (pairDiff > 0 || scoreDiff > 0.0f) && hasUnpaired;
-							local_thread_operations.push_back({ x, y, s, pairDiff, scoreDiff, isPromising, entropyDiff });
-						}
-						return local_thread_operations;
-					}));
+							return local_thread_operations;
+						}));
 				}
 
 				operations.clear(); // Ensure it's empty before collecting results
@@ -175,7 +174,7 @@ Solution BeamSearchAlgorithm::run() {
 				}
 			}
 			// --- End of Parallelized Operation Generation ---
-			
+
 			// Sort operations
 			std::sort(operations.begin(), operations.end());
 
@@ -228,9 +227,11 @@ timeout_exit_label:; // Label for goto, placed after the main loops
 
 	if (not bestSolution.ops.empty() && stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
 		Print << U"Timeout: Returning best solution found so far after {}ms."_fmt(stopwatch.ms());
-	} else if (bestSolution.ops.empty() && stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
+	}
+	else if (bestSolution.ops.empty() && stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
 		Print << U"Timeout: No solution found within {}ms."_fmt(stopwatch.ms());
-	} else if (m_field.isFinished()) {
+	}
+	else if (m_field.isFinished()) {
 		// This case should be handled by the early exit when a solution is found.
 		// If reached, it means a finished state was achieved but not returned immediately.
 		Print << U"Finished (but not caught earlier): {}ms"_fmt(stopwatch.ms());

@@ -239,7 +239,11 @@ bool Field::isValidField(const JSON& json)
 
 bool Field::submitSolution(const Solution& solution, const String& url) {
 	// Convert solution to the required JSON format
+	String timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
 	JSON submissionJson = solution.toSubmissionJSON();
+	const FilePath solutionFilePath = FileSystem::FullPath(U"solution_" + timestamp + U".json");
+	// Save the solution JSON to a file for debugging purposes
+	submissionJson.save(solutionFilePath);
 
 	// Convert JSON to string for HTTP body
 	String jsonString = submissionJson.format();
@@ -251,9 +255,8 @@ bool Field::submitSolution(const Solution& solution, const String& url) {
 	};
 
 	// Create a memory writer to capture the response
-	MemoryWriter responseWriter;
-
-	const String timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
+	
+	timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
 	const FilePath filePath = FileSystem::FullPath(U"submission_data_" + timestamp + U".json");
 
 	// Send HTTP POST request
