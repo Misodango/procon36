@@ -106,11 +106,6 @@ void Field::setStartsAt(int32 startsAt)
 	this->startsAt = startsAt;
 }
 
-void Field::setDuration(int32 duration)
-{
-	this->duration = duration;
-}
-
 /*
 *  @brief ランダムにフィールドを生成する
 *  @param size フィールドのサイズ
@@ -140,12 +135,29 @@ Field Field::random(int32 size) {
 */
 
 Field Field::fromJSON(const JSON& json) {
+	if (json.contains(U"startsAt")) {
+		int32 startsAtTimestamp = json[U"startsAt"].get<int32>();
+		int64 currentTimestamp = std::chrono::duration_cast<std::chrono::seconds>(
+			std::chrono::system_clock::now().time_since_epoch()
+		).count();
 
-	Console << json;
+		if (currentTimestamp < startsAtTimestamp) {
+			return Field(0);
+		}
+	}
+
+	if (!json.contains(U"problem") || !json[U"problem"].contains(U"field")) {
+		return Field(0);
+	}
+
 	const int32 size = json[U"problem"][U"field"][U"size"].get<int32>();
 	const JSONArrayView entitiesArray = json[U"problem"][U"field"][U"entities"].arrayView();
 	Field field(size);
-	field.setStartsAt(json[U"startsAt"].get<int32>());
+
+	if (json.contains(U"startsAt")) {
+		field.setStartsAt(json[U"startsAt"].get<int32>());
+	}
+
 	for (int y = 0; y < size; ++y) {
 		const JSONArrayView entities = entitiesArray[y].arrayView();
 		for (int x = 0; x < size; ++x) {
@@ -186,31 +198,37 @@ Field Field::fromHTTP(const String& url)
 
 	// 同期的にHTTPリクエストを実行
 	HTTPResponse response = SimpleHTTP::Get(url, headers, filePath);
-	
+
 	if (response.isOK()) {
 		const JSON json = JSON::Load(filePath);
 		if (json) {
-			Print << U"HTTPからフィールドを正常に読み込みました: " << url;
-			return Field::fromJSON(json);
+			if (isValidField(json)) {
+				Print << U"HTTPからフィールドを正常に読み込みました: " << url;
+				return Field::fromJSON(json);
+			}
+			else {
+				Print << U"ゲーム未開始";
+				return Field(0);
+			}
 		}
 		else {
 			Print << U"JSON ファイルの読み込みに失敗しました: " << filePath;
 		}
 	}
 	else {
-		Print << U"HTTP リクエストが失敗しました: code:";
+		Print << U"HTTP リクエストが失敗しました: code:" << FromEnum(response.getStatusCode());
 	}
 	return Field(0); // エラー時は無効なフィールドを返す
 }
 
-/*
-*  @brief デフォルトURLを使用してHTTPからフィールドを生成する
-*  @return フィールド
-*/
-Field Field::fromHTTPDefault()
+bool Field::isValidField(const JSON& json)
 {
-	return Field::fromHTTP(U"192.168.3.33:3000");
+	if (!json.contains(U"problem") || !json[U"problem"].contains(U"field")) {
+		return false;
+	}
+	return true;
 }
+
 
 /*
 * @brief 解答をHTTP POSTで提出する
@@ -236,7 +254,7 @@ bool Field::submitSolution(const Solution& solution, const String& url) {
 	MemoryWriter responseWriter;
 
 	const String timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
-	const FilePath filePath = FileSystem::FullPath(U"submission_data" + timestamp + U".json");
+	const FilePath filePath = FileSystem::FullPath(U"submission_data_" + timestamp + U".json");
 
 	// Send HTTP POST request
 	HTTPResponse response = SimpleHTTP::Post(
@@ -249,7 +267,6 @@ bool Field::submitSolution(const Solution& solution, const String& url) {
 
 	if (response.isOK()) {
 		JSON responseJson = JSON::Load(filePath);
-		Console << responseJson;
 		if (responseJson && responseJson.hasElement(U"revision")) {
 			int32 revision = responseJson[U"revision"].get<int32>();
 			Print << U"Solution submitted successfully! Revision: " << revision;
@@ -1401,7 +1418,7 @@ float Field::calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) co
 Array<Field> Field::generateRandomCompleteFieldsAll() {
 	DominoTiling dominoTiling(size);
 	Array<Field> completeFields;
-	for(const auto& field : dominoTiling.getAllPatterns()) {
+	for (const auto& field : dominoTiling.getAllPatterns()) {
 		Field newField(size, entityCount);
 		newField.entities = field;
 		completeFields.push_back(newField);

@@ -17,9 +17,6 @@ public:
 	// 描画用の色
 	static Array<Color> colors;
 
-	// 試合時間(duration[sec])
-	int32 duration;
-
 	// いつ始まるか
 	int32 startsAt;
 
@@ -37,9 +34,6 @@ public:
 	// startsAtセッター
 	void setStartsAt(int32 startsAt);
 
-	// durationセッター
-	void setDuration(int32 duration);
-
 	// ランダムにフィールドを生成する関数
 	static Field random(int32 size);
 
@@ -49,7 +43,8 @@ public:
 
 	static Field fromHTTP(const String& url);
 
-	static Field fromHTTPDefault();
+	// 取得したJSONが有効なフィールドかどうかを判定する関数
+	static bool isValidField(const JSON& json);
 
 	// 提出
 	static bool submitSolution(const Solution& solution, const String& url = U"192.168.3.33:3000");

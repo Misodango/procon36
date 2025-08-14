@@ -155,7 +155,7 @@ void Main()
 			if (SimpleGUI::Button(U"Load Game from HTTP", Vec2{ 20, 200 })) {
 				// 非同期でHTTPフィールドを取得
 				httpFieldTask = Async([]() -> Field {
-					return Field::fromHTTPDefault();
+					return Field::fromHTTP(DEFAULT_HTTP_URL);
 				});
 				httpLoadingFailed = false;
 				httpErrorMessage.clear();
