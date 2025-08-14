@@ -352,6 +352,10 @@
     <ClInclude Include="ReplicaExchangeMonteCarlo.h" />
     <ClInclude Include="SimulatedAnnealingAlgorithm.h" />
     <ClInclude Include="Solution.h" />
+    <ClInclude Include="src\Field.h" />
+    <ClInclude Include="src\FieldEvaluator.h" />
+    <ClInclude Include="src\FieldRenderer.h" />
+    <ClInclude Include="src\ZobristHelper.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TestFields.h" />
   </ItemGroup>
