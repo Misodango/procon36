@@ -17,7 +17,7 @@ public:
 	// 描画用の色
 	static Array<Color> colors;
 
-	// いつ始まるか
+	// 試合の開始時刻（秒単位のUnixエポックタイムスタンプ）
 	int32 startsAt;
 
 	// コンストラクタでフィールドを初期化
