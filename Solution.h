@@ -39,6 +39,9 @@ struct Solution
 	// 空かどうかを確認
 	bool isEmpty() const;
 
+	// 回答用JSONに変換
+	JSON toSubmissionJSON() const;
+
 	// 解答用JSONから変換
 	static Solution fromJSON(const JSON& json);
 };
