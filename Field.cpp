@@ -1,5 +1,6 @@
 ﻿#include "Field.h"
 #include "DominoTiling.h"
+#include "Solution.h"
 #include <Siv3D.hpp> // Siv3Dの機能を使用
 #include <chrono>    // For seeding RNG
 #include <cmath>     // For Euclidean distance calculations
@@ -100,6 +101,11 @@ Field& Field::operator=(const Field& other) {
 	return *this;
 }
 
+void Field::setStartsAt(int32 startsAt)
+{
+	this->startsAt = startsAt;
+}
+
 /*
 *  @brief ランダムにフィールドを生成する
 *  @param size フィールドのサイズ
@@ -129,9 +135,29 @@ Field Field::random(int32 size) {
 */
 
 Field Field::fromJSON(const JSON& json) {
+	if (json.contains(U"startsAt")) {
+		int32 startsAtTimestamp = json[U"startsAt"].get<int32>();
+		int64 currentTimestamp = std::chrono::duration_cast<std::chrono::seconds>(
+			std::chrono::system_clock::now().time_since_epoch()
+		).count();
+
+		if (currentTimestamp < startsAtTimestamp) {
+			return Field(0);
+		}
+	}
+
+	if (!json.contains(U"problem") || !json[U"problem"].contains(U"field")) {
+		return Field(0);
+	}
+
 	const int32 size = json[U"problem"][U"field"][U"size"].get<int32>();
 	const JSONArrayView entitiesArray = json[U"problem"][U"field"][U"entities"].arrayView();
 	Field field(size);
+
+	if (json.contains(U"startsAt")) {
+		field.setStartsAt(json[U"startsAt"].get<int32>());
+	}
+
 	for (int y = 0; y < size; ++y) {
 		const JSONArrayView entities = entitiesArray[y].arrayView();
 		for (int x = 0; x < size; ++x) {
@@ -157,6 +183,107 @@ Field Field::fromPath(const FilePath& path) {
 		Print << U"JSON ファイルの読み込みに失敗しました";
 	}
 	return Field(0);
+}
+
+/*
+*  @brief HTTPからフィールドを生成する
+*  @param url リクエストURL
+*  @return フィールド
+*/
+Field Field::fromHTTP(const String& url)
+{
+	const HashTable<String, String> headers = { { U"Procon-Token", U"player3" } };
+	const String timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
+	const FilePath filePath = FileSystem::FullPath(U"match_data_" + timestamp + U".json");
+
+	// 同期的にHTTPリクエストを実行
+	HTTPResponse response = SimpleHTTP::Get(url, headers, filePath);
+
+	if (response.isOK()) {
+		const JSON json = JSON::Load(filePath);
+		if (json) {
+			if (isValidField(json)) {
+				Print << U"HTTPからフィールドを正常に読み込みました: " << url;
+				return Field::fromJSON(json);
+			}
+			else {
+				Print << U"ゲーム未開始";
+				return Field(0);
+			}
+		}
+		else {
+			Print << U"JSON ファイルの読み込みに失敗しました: " << filePath;
+		}
+	}
+	else {
+		Print << U"HTTP リクエストが失敗しました: code:" << FromEnum(response.getStatusCode());
+	}
+	return Field(0); // エラー時は無効なフィールドを返す
+}
+
+bool Field::isValidField(const JSON& json)
+{
+	if (!json.contains(U"problem") || !json[U"problem"].contains(U"field")) {
+		return false;
+	}
+	return true;
+}
+
+
+/*
+* @brief 解答をHTTP POSTで提出する
+* @param solution 提出する解答
+* @param url 提出先URL
+* @return bool 提出成功時はtrue、失敗時はfalse
+*/
+
+bool Field::submitSolution(const Solution& solution, const String& url) {
+	// Convert solution to the required JSON format
+	String timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
+	JSON submissionJson = solution.toSubmissionJSON();
+	const FilePath solutionFilePath = FileSystem::FullPath(U"solution_" + timestamp + U".json");
+	// Save the solution JSON to a file for debugging purposes
+	submissionJson.save(solutionFilePath);
+
+	// Convert JSON to string for HTTP body
+	String jsonString = submissionJson.format();
+
+	// Set up headers for JSON content
+	const HashTable<String, String> headers = {
+		{ U"Content-Type", U"application/json" },
+		{ U"Procon-Token", U"player3" }
+	};
+
+	// Create a memory writer to capture the response
+	
+	timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
+	const FilePath filePath = FileSystem::FullPath(U"submission_data_" + timestamp + U".json");
+
+	// Send HTTP POST request
+	HTTPResponse response = SimpleHTTP::Post(
+		url,
+		headers,
+		jsonString.toUTF8().data(),
+		jsonString.toUTF8().size(),
+		filePath
+	);
+
+	if (response.isOK()) {
+		JSON responseJson = JSON::Load(filePath);
+		if (responseJson && responseJson.hasElement(U"revision")) {
+			int32 revision = responseJson[U"revision"].get<int32>();
+			Print << U"Solution submitted successfully! Revision: " << revision;
+			return true;
+		}
+		else {
+			Print << U"Solution submitted but unexpected response format: " << FromEnum(response.getStatusCode());
+			return false;
+		}
+	}
+	else {
+		Print << U"Failed to submit solution. HTTP status:" << FromEnum(response.getStatusCode());
+		return false;
+	}
 }
 
 /*
@@ -1294,7 +1421,7 @@ float Field::calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) co
 Array<Field> Field::generateRandomCompleteFieldsAll() {
 	DominoTiling dominoTiling(size);
 	Array<Field> completeFields;
-	for(const auto& field : dominoTiling.getAllPatterns()) {
+	for (const auto& field : dominoTiling.getAllPatterns()) {
 		Field newField(size, entityCount);
 		newField.entities = field;
 		completeFields.push_back(newField);

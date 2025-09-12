@@ -13,6 +13,8 @@
 * 0515 ひろし参上！
 */
 
+static const URL DEFAULT_HTTP_URL = U"192.168.3.33:3000";
+
 // Helper function to convert Field to JSON
 JSON FieldToJSON(const Field& field) {
 	JSON json;
@@ -49,7 +51,9 @@ enum class AppMode {
 	Solving,
 	ShowingSolution,
 	InitializingDataCollection,
-	DataCollecting
+	DataCollecting,
+	InitializingHTTPGame,
+	HTTPGameLoading,
 };
 
 // Forward declaration for CollectData
@@ -76,6 +80,17 @@ void Main()
 	Optional<PuzzleVisualizer> gameVisualizerInstance;
 	Optional<AsyncTask<Solution>> solutionTask;
 	Optional<Solution> solvedSolution;
+	
+
+	// HTTPの状態管理
+	Optional<AsyncTask<Field>> httpFieldTask;
+	Optional<AsyncTask<bool>> submissionTask;
+	TextEditState customHTTPURL{ DEFAULT_HTTP_URL }; // デフォルトURL
+	bool httpLoadingFailed = false;
+	bool submissionInProgress = false;
+	bool submissionSuccess = false;
+	String httpErrorMessage;
+	String submissionMessage;
 
 	int32 selectedBoardSize = 8; // Default for gameplay
 	double boardSizeSlider = static_cast<double>(selectedBoardSize);
@@ -98,45 +113,158 @@ void Main()
 				currentField.reset();
 				algorithmInstance.reset();
 				gameVisualizerInstance.reset();
+				httpFieldTask.reset();
+				httpLoadingFailed = false;
 			}
-			if (SimpleGUI::Button(U"Collect Data Mode", Vec2{ 20, 110 }, 200)) {
-				currentMode = AppMode::InitializingDataCollection;
-				solutionTask.reset();
-				solvedSolution.reset();
-			}
-		} else {
-			if (SimpleGUI::Button(U"Back to Mode Select", Vec2{ Scene::Width() - 220, 20 }, 200)) {
-				currentMode = AppMode::SelectMode;
+			if (SimpleGUI::Button(U"HTTP GET Mode", Vec2{ 20, 110 }, 200)) {
+				currentMode = AppMode::InitializingHTTPGame;
 				// Reset states
 				solutionTask.reset();
 				solvedSolution.reset();
 				currentField.reset();
 				algorithmInstance.reset();
 				gameVisualizerInstance.reset();
+				httpFieldTask.reset();
+				httpLoadingFailed = false;
+			}
+			if (SimpleGUI::Button(U"Collect Data Mode", Vec2{ 20, 160 }, 200)) {
+				currentMode = AppMode::InitializingDataCollection;
+				solutionTask.reset();
+				solvedSolution.reset();
+				currentField.reset();
+				algorithmInstance.reset();
+				gameVisualizerInstance.reset();
+				httpFieldTask.reset();
+				httpLoadingFailed = false;
+			}
+		} else {
+			if (SimpleGUI::Button(U"Back to Mode Select", Vec2{ Scene::Width() - 220, 20 }, 200)) {
+				currentMode = AppMode::SelectMode;
+				solutionTask.reset();
+				solvedSolution.reset();
+				currentField.reset();
+				algorithmInstance.reset();
+				gameVisualizerInstance.reset();
+				httpFieldTask.reset();
+				httpLoadingFailed = false;
 			}
 		}
 
-
 		switch (currentMode)
 		{
+		case AppMode::InitializingHTTPGame:
+		{
+			SimpleGUI::Headline(U"HTTP Game Setup", Vec2{ 20, 100 });
+			SimpleGUI::TextBox(customHTTPURL, Vec2{ 20, 140 }, 400);
+
+			if(httpLoadingFailed) {
+				SimpleGUI::Headline(httpErrorMessage, Vec2{ 20, 180 }, 400);
+			}
+
+			if (SimpleGUI::Button(U"Load Game from HTTP", Vec2{ 20, 200 })) {
+				// 非同期でHTTPフィールドを取得
+				httpFieldTask = Async([]() -> Field {
+					return Field::fromHTTP(DEFAULT_HTTP_URL);
+				});
+				httpLoadingFailed = false;
+				httpErrorMessage.clear();
+				currentMode = AppMode::HTTPGameLoading;
+			}
+
+			if (SimpleGUI::Button(U"Use Custom URL", Vec2{ 20, 250 })) {
+				if (!customHTTPURL.text.isEmpty()) {
+					httpFieldTask = Async([customHTTPURL]() -> Field {
+						return Field::fromHTTP(customHTTPURL.text);
+					});
+					httpLoadingFailed = false;
+					httpErrorMessage.clear();
+					currentMode = AppMode::HTTPGameLoading;
+				}
+			}
+
+			if (submissionTask && submissionTask->isReady()) {
+				submissionSuccess = submissionTask->get();
+				submissionInProgress = false;
+				submissionMessage = submissionSuccess ?
+					U"Solution submitted successfully!" :
+					U"Failed to submit solution. Check console for details.";
+				submissionTask.reset();
+			}
+
+			if (submissionInProgress) {
+				SimpleGUI::Headline(U"Submitting solution...", Vec2{ 20, Scene::Height() - 200 });
+			}
+			if (!submissionMessage.isEmpty()) {
+				Color messageColor;
+				if (submissionSuccess) {
+					messageColor = Palette::Green;
+				}
+				else {
+					messageColor = Palette::Red;
+				}
+				SimpleGUI::Headline(submissionMessage, Vec2{ 20, Scene::Height() - 200 }, 400);
+			}
+			break;
+		}
+		case AppMode::HTTPGameLoading:
+		{
+			SimpleGUI::Headline(U"Loading Game from HTTP...", Vec2{ 20, 100 });
+			SimpleGUI::Headline(U"Please wait while the game is being downloaded.", Vec2{ 20, 140 });
+
+			// 簡単なローディングアニメーション
+			const double t = Scene::Time();
+			const int32 dots = static_cast<int32>(t * 2) % 4;
+			String loadingText = U"Loading";
+			for (int32 i = 0; i < dots; ++i) {
+				loadingText += U".";
+			}
+			SimpleGUI::Headline(loadingText, Vec2{ 20, 300 });
+
+			if (httpFieldTask && httpFieldTask->isReady()) {
+				Field loadedField = httpFieldTask->get();
+
+				if (loadedField.getSize() > 0) {
+					// 正常にロードされた場合
+					currentField = loadedField;
+					algorithmInstance.emplace(*currentField);
+					solvedSolution.reset();
+					solutionTask.reset();
+					gameVisualizerInstance.emplace(*currentField, Solution{});
+					currentMode = AppMode::Gameplay;
+					Print << U"HTTPゲームを正常に開始しました";
+				}
+				else {
+					// ロードに失敗した場合
+					httpLoadingFailed = true;
+					httpErrorMessage = U"Failed to load game from HTTP. Check URL and network connection.";
+					currentMode = AppMode::InitializingHTTPGame;
+				}
+				httpFieldTask.reset();
+			}
+
+			// キャンセルボタン
+			if (SimpleGUI::Button(U"Cancel", Vec2{ 20, 210 })) {
+				httpFieldTask.reset();
+				currentMode = AppMode::InitializingHTTPGame;
+			}
+			break;
+		}
 		case AppMode::InitializingGameplay:
 		{
 			SimpleGUI::Headline(U"Gameplay Setup", Vec2{ 20, 100 });
 			SimpleGUI::Slider(U"Board Size (Even): {:.0f}"_fmt(boardSizeSlider), boardSizeSlider, 6.0, 24.0, Vec2{ 20, 140 }, 180, 100);
 			selectedBoardSize = static_cast<int32>(boardSizeSlider);
-			if (selectedBoardSize % 2 != 0) { // Ensure even size
-				selectedBoardSize = Max(6, selectedBoardSize -1); 
+			if (selectedBoardSize % 2 != 0) {
+				selectedBoardSize = Max(6, selectedBoardSize - 1);
 				boardSizeSlider = selectedBoardSize;
 			}
 
-
 			if (SimpleGUI::Button(U"Start Game", Vec2{ 20, 200 })) {
-				// currentField.emplace(Field::random(selectedBoardSize));
-				currentField = Field::random(selectedBoardSize); // Create a new field with the selected size
+				currentField = Field::random(selectedBoardSize);
 				algorithmInstance.emplace(*currentField);
-				solvedSolution.reset(); // Clear any previous solution
-				solutionTask.reset();   // Clear any ongoing solving task
-				gameVisualizerInstance.emplace(*currentField, Solution{}); // Visualize with empty solution
+				solvedSolution.reset();
+				solutionTask.reset();
+				gameVisualizerInstance.emplace(*currentField, Solution{});
 				currentMode = AppMode::Gameplay;
 			}
 			break;
@@ -174,6 +302,21 @@ void Main()
 				gameVisualizerInstance.reset();
 				solutionTask.reset();
 				solvedSolution.reset();
+				submissionTask.reset();
+				submissionInProgress = false;
+				submissionSuccess = false;
+				submissionMessage.clear();
+			}
+
+			if (solvedSolution && !submissionInProgress) {
+				if (SimpleGUI::Button(U"Submit Solution", Vec2{ 250, Scene::Height() - 150 }, 180)) {
+					submissionTask = Async([solvedSolution]() -> bool {
+						return Field::submitSolution(*solvedSolution);
+					});
+					submissionInProgress = true;
+					submissionSuccess = false;
+					submissionMessage.clear();
+				}
 			}
 			break;
 		}

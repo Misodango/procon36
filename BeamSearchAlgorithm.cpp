@@ -97,12 +97,12 @@ Solution BeamSearchAlgorithm::run() {
 			struct WorkItem { int32 s, x, y; };
 			std::vector<WorkItem> work_items;
 			// Estimate max possible operations to reserve space, can be refined
-			work_items.reserve(fieldSize * fieldSize * fieldSize); 
+			work_items.reserve(fieldSize * fieldSize * fieldSize);
 
 			for (int32 s_loop = fieldSize - 1; s_loop >= 2; --s_loop) {
 				for (int32 x_loop = 0; x_loop <= fieldSize - s_loop; ++x_loop) {
 					for (int32 y_loop = 0; y_loop <= fieldSize - s_loop; ++y_loop) {
-						work_items.push_back({s_loop, x_loop, y_loop});
+						work_items.push_back({ s_loop, x_loop, y_loop });
 					}
 				}
 			}
@@ -156,15 +156,14 @@ Solution BeamSearchAlgorithm::run() {
 										hasUnpaired = true;
 										break;
 									}
+									if (hasUnpaired) break;
 								}
-								if (hasUnpaired) break;
+
+								bool isPromising = (pairDiff > 0 || scoreDiff > 0.0f) && hasUnpaired;
+								local_thread_operations.push_back({ x, y, s, pairDiff, scoreDiff, isPromising, entropyDiff });
 							}
-							
-							bool isPromising = (pairDiff > 0 || scoreDiff > 0.0f) && hasUnpaired;
-							local_thread_operations.push_back({ x, y, s, pairDiff, scoreDiff, isPromising, entropyDiff });
-						}
-						return local_thread_operations;
-					}));
+							return local_thread_operations;
+						}));
 				}
 
 				operations.clear(); // Ensure it's empty before collecting results
@@ -178,7 +177,7 @@ Solution BeamSearchAlgorithm::run() {
 				}
 			}
 			// --- End of Parallelized Operation Generation ---
-			
+
 			// Sort operations
 			std::sort(operations.begin(), operations.end());
 
