@@ -25,7 +25,7 @@ private:
 	int32 m_windowWidth, m_windowHeight;
 	double m_sliderValue;
 	bool m_showNumbers;
-	bool m_colorTile;
+	bool m_colorTile = 0;
 	bool m_hasClosedVisualizer;
 
 	// ボタン
