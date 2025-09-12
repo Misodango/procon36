@@ -19,27 +19,35 @@ PuzzleVisualizer::PuzzleVisualizer(const Field& initialField, const Solution& so
 	// ウィンドウサイズの設定
 	m_windowWidth = Scene::Width();
 	m_windowHeight = Scene::Height();
-	Scene::SetResizeMode(ResizeMode::Keep);
+	
+	// リサイズモードを変更して、ウィンドウサイズ変更時に自動調整
+	Scene::SetResizeMode(ResizeMode::Virtual);
 
 	// フィールド表示領域とコントロール領域の設定
 	m_fieldRect = Rect(0, 0, m_windowWidth, m_windowHeight - 200);
 	m_controlRect = Rect(0, m_fieldRect.h, m_windowWidth, 200);
 
-	// ボタンの設定
-	m_playButton = Rect(m_controlRect.x + 10, m_controlRect.y + 20, 80, 40);
+	// ボタンの設定 - レイアウトを改善
+	int buttonY1 = m_controlRect.y + 20;
+	int buttonY2 = m_controlRect.y + 70;
+	int buttonY3 = m_controlRect.y + 120;
+	
+	// 左側のボタングループ（再生制御）
+	m_playButton = Rect(m_controlRect.x + 10, buttonY1, 80, 40);
 	m_pauseButton = m_playButton;
-	m_resetButton = Rect(m_controlRect.x + m_controlRect.w - 90, m_controlRect.y + 20, 80, 40);
-
-	m_nextButton = Rect(m_controlRect.x + 100, m_controlRect.y + 20, 80, 40);
-	m_prevButton = Rect(m_controlRect.x + 190, m_controlRect.y + 20, 80, 40);
-
-	m_speedUpButton = Rect(m_controlRect.x + m_controlRect.w - 180, m_controlRect.y + 20, 80, 40);
-	m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, m_controlRect.y + 20, 80, 40);
-
-	m_showNumbersButton = Rect(m_controlRect.x + 300, m_controlRect.y + 20, 80, 40);
-	m_colorTileButton = Rect(m_controlRect.x + 300, m_controlRect.y + 70, 80, 40);
-
-	m_closeButton = Rect(m_controlRect.x + 300, m_controlRect.y + 120, 80, 40);
+	m_nextButton = Rect(m_controlRect.x + 100, buttonY1, 80, 40);
+	m_prevButton = Rect(m_controlRect.x + 190, buttonY1, 80, 40);
+	
+	// 中央のボタングループ（表示制御）
+	m_showNumbersButton = Rect(m_controlRect.x + 300, buttonY1, 100, 40);
+	m_colorTileButton = Rect(m_controlRect.x + 410, buttonY1, 100, 40);
+	
+	// 右側のボタングループ（速度制御とその他）
+	m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, buttonY1, 80, 40);
+	m_speedUpButton = Rect(m_controlRect.x + m_controlRect.w - 180, buttonY1, 80, 40);
+	m_resetButton = Rect(m_controlRect.x + m_controlRect.w - 90, buttonY1, 80, 40);
+	
+	m_closeButton = Rect(m_controlRect.x + m_controlRect.w - 90, buttonY3, 80, 40);
 
 	m_hasClosedVisualizer = false;
 
@@ -79,21 +87,27 @@ void PuzzleVisualizer::run()
 		m_fieldRect = Rect(0, 0, m_windowWidth, m_windowHeight - 200);
 		m_controlRect = Rect(0, m_fieldRect.h, m_windowWidth, 200);
 
-		// ボタンの更新
-		m_playButton = Rect(m_controlRect.x + 10, m_controlRect.y + 20, 80, 40);
+		// ボタンの更新 - レイアウトを改善
+		int buttonY1 = m_controlRect.y + 20;
+		int buttonY2 = m_controlRect.y + 70;
+		int buttonY3 = m_controlRect.y + 120;
+		
+		// 左側のボタングループ（再生制御）
+		m_playButton = Rect(m_controlRect.x + 10, buttonY1, 80, 40);
 		m_pauseButton = m_playButton;
-		m_resetButton = Rect(m_controlRect.x + m_controlRect.w - 90, m_controlRect.y + 20, 80, 40);
-
-		m_nextButton = Rect(m_controlRect.x + 100, m_controlRect.y + 20, 80, 40);
-		m_prevButton = Rect(m_controlRect.x + 190, m_controlRect.y + 20, 80, 40);
-
-		m_speedUpButton = Rect(m_controlRect.x + m_controlRect.w - 180, m_controlRect.y + 20, 80, 40);
-		m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, m_controlRect.y + 20, 80, 40);
-
-		m_showNumbersButton = Rect(m_controlRect.x + 300, m_controlRect.y + 20, 80, 40);
-		m_colorTileButton = Rect(m_controlRect.x + 300, m_controlRect.y + 70, 80, 40);
-
-		m_closeButton = Rect(m_controlRect.x + 300, m_controlRect.y + 120, 80, 40);
+		m_nextButton = Rect(m_controlRect.x + 100, buttonY1, 80, 40);
+		m_prevButton = Rect(m_controlRect.x + 190, buttonY1, 80, 40);
+		
+		// 中央のボタングループ（表示制御）
+		m_showNumbersButton = Rect(m_controlRect.x + 300, buttonY1, 100, 40);
+		m_colorTileButton = Rect(m_controlRect.x + 410, buttonY1, 100, 40);
+		
+		// 右側のボタングループ（速度制御とその他）
+		m_speedDownButton = Rect(m_controlRect.x + m_controlRect.w - 270, buttonY1, 80, 40);
+		m_speedUpButton = Rect(m_controlRect.x + m_controlRect.w - 180, buttonY1, 80, 40);
+		m_resetButton = Rect(m_controlRect.x + m_controlRect.w - 90, buttonY1, 80, 40);
+		
+		m_closeButton = Rect(m_controlRect.x + m_controlRect.w - 90, buttonY3, 80, 40);
 
 		// 入力処理
 		handleInput();
@@ -136,11 +150,15 @@ void PuzzleVisualizer::drawControls()
 	// コントロールパネルの背景
 	m_controlRect.draw(ColorF(0.2, 0.2, 0.2, 0.8));
 
-	// スライダー
+	// スライダー - 位置とサイズを調整
+	int sliderWidth = m_controlRect.w - 600; // 両端に余裕を持たせる
+	int sliderX = m_controlRect.x + 300;
+	int sliderY = m_controlRect.y + 70;
+	
 	m_slider = SimpleGUI::Slider(U"Step:{}/{}"_fmt(m_currentStep, m_operations.size()),
 		m_sliderValue, 0, m_operations.size(),
-		Vec2(m_controlRect.x + 400, m_controlRect.y + 20),
-		100, 1000
+		Vec2(sliderX, sliderY),
+		120, sliderWidth
 	);
 
 	// 再生・一時停止ボタン
@@ -182,10 +200,10 @@ void PuzzleVisualizer::drawControls()
 	// 数字表示ボタン
 	m_showNumbersButton.drawFrame(2, 0, ColorF(1.0));
 	if (m_showNumbers) {
-		m_font(U"123").drawAt(m_showNumbersButton.center(), ColorF(1.0));
+		m_font(U"nu").drawAt(m_showNumbersButton.center(), ColorF(1.0));
 	}
 	else {
-		m_font(U"").drawAt(m_showNumbersButton.center(), ColorF(1.0));
+		m_font(U"nonu").drawAt(m_showNumbersButton.center(), ColorF(1.0));
 	}
 
 	// タイルの色変更ボタン
@@ -201,22 +219,22 @@ void PuzzleVisualizer::drawControls()
 	m_closeButton.drawFrame(2, 0, ColorF(1.0));
 	m_font(U"Close").drawAt(m_closeButton.center(), ColorF(1.0));
 
-	// 情報表示
-	m_font(U"Step: {}/{}"_fmt(m_currentStep, m_operations.size())).draw(m_controlRect.x + 10, m_controlRect.y + 80, ColorF(1.0));
-	m_font(U"Speed: x{:.1f}"_fmt(m_playSpeed)).draw(m_controlRect.x + 10, m_controlRect.y + 110, ColorF(1.0));
+	// 情報表示 - 位置を調整
+	int infoY = m_controlRect.y + 120;
+	m_font(U"Step: {}/{}"_fmt(m_currentStep, m_operations.size())).draw(m_controlRect.x + 10, infoY, ColorF(1.0));
+	m_font(U"Speed: x{:.1f}"_fmt(m_playSpeed)).draw(m_controlRect.x + 200, infoY, ColorF(1.0));
 
 	// ペア数
 	int32_t pairs = m_currentField.countPairs();
 	int32_t totalPairs = (m_initialField.getSize() * m_initialField.getSize()) / 2;
-	m_font(U"Pairs: {}/{}"_fmt(pairs, totalPairs)).draw(m_controlRect.x + 10, m_controlRect.y + 140, ColorF(1.0));
+	m_font(U"Pairs: {}/{}"_fmt(pairs, totalPairs)).draw(m_controlRect.x + 400, infoY, ColorF(1.0));
 
 	if (!m_entropies.empty())
 	{
 		m_font(U"Entropy: {:.4f}"_fmt(m_entropies.back()))
-			.draw(m_controlRect.x + 10, m_controlRect.y + 170, ColorF(1.0));
+			.draw(m_controlRect.x + 600, infoY, ColorF(1.0));
 	}
 }
-
 
 /*
 * @brief PuzzleVisualizerの入力処理

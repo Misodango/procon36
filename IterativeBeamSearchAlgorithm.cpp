@@ -24,13 +24,19 @@ Solution IterativeBeamSearchAlgorithm::run() {
 	totalStopwatch.start();
 
 	for (int32 step = 0; step < m_maxTotalSteps; ++step) {
-		Print << U"Iterative Step: {}"_fmt(step + 1);
+		// Check if total time exceeds 300s
+		if (totalStopwatch.s() >= 250) {
+			// Print << U"IterativeBeamSearch: Time limit of 300 seconds reached, ending search early.";
+			break;
+		}
+
+		// Print << U"Iterative Step: {}"_fmt(step + 1);
 
 		BeamSearchAlgorithm beamStep(m_currentField, m_beamWidthPerStep, m_depthPerStep);
 		Solution stepSolution = beamStep.run();
 
 		if (stepSolution.ops.isEmpty()) {
-			Print << U"IterativeBeamSearch: Beam search returned no operations at step {}."_fmt(step + 1);
+			// Print << U"IterativeBeamSearch: Beam search returned no operations at step {}."_fmt(step + 1);
 			break; // Stuck, no further moves found by the beam search step
 		}
 
@@ -47,17 +53,17 @@ Solution IterativeBeamSearchAlgorithm::run() {
 			m_accumulatedSolution.add(op);
 		}
 
-		Print << U"Iterative Step {} completed. Current score: {}"_fmt(step + 1, m_currentField.evaluateState());
+		// Print << U"Iterative Step {} completed. Current score: {}"_fmt(step + 1, m_currentField.evaluateState());
 
 
 		if (m_currentField.isFinished()) {
-			Print << U"IterativeBeamSearch: Puzzle solved in {} steps, total time: {}ms"_fmt(step + 1, totalStopwatch.ms());
+			// Print << U"IterativeBeamSearch: Puzzle solved in {} steps, total time: {}ms"_fmt(step + 1, totalStopwatch.ms());
 			break;
 		}
 	}
 
 	if (!m_currentField.isFinished()) {
-		Print << U"IterativeBeamSearch: Max total steps reached or search stuck. Puzzle not solved. Total time: {}ms"_fmt(totalStopwatch.ms());
+		// Print << U"IterativeBeamSearch: Max total steps reached or search stuck. Puzzle not solved. Total time: {}ms"_fmt(totalStopwatch.ms());
 	}
 
 	return m_accumulatedSolution;
