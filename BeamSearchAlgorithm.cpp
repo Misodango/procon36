@@ -38,7 +38,7 @@ Solution BeamSearchAlgorithm::run() {
 	// 各深さでビームサーチを実行
 	for (int32 depth = 0; depth < m_maxDepth; ++depth) {
 		if (stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
-			Print << U"Beam search internal timeout of {}s reached at depth {}."_fmt(INTERNAL_TIMEOUT_SECONDS, depth);
+			// Print << U"Beam search internal timeout of {}s reached at depth {}."_fmt(INTERNAL_TIMEOUT_SECONDS, depth);
 			break;
 		}
 		std::priority_queue<BeamState> nextBeam;
@@ -56,7 +56,7 @@ Solution BeamSearchAlgorithm::run() {
 
 			// 完了状態なら解を更新
 			if (current.field.isFinished()) {
-				Print << U"solved ! :{}ms in {}steps"_fmt(stopwatch.ms(), current.solution.ops.size());
+				// Print << U"solved ! :{}ms in {}steps"_fmt(stopwatch.ms(), current.solution.ops.size());
 				return current.solution;  // 最短解を見つけたので即座に返す
 			}
 
@@ -109,6 +109,7 @@ Solution BeamSearchAlgorithm::run() {
 
 			if (not work_items.empty()) {
 				std::vector<std::future<std::vector<Operation>>> futures;
+
 				const size_t num_threads_to_use = std::max(1u, std::thread::hardware_concurrency());
 				// Ensure items_per_thread is at least 1 if work_items.size() < num_threads_to_use
 				size_t items_per_thread = (work_items.size() + num_threads_to_use - 1) / num_threads_to_use;
@@ -234,10 +235,10 @@ timeout_exit_label:; // Label for goto, placed after the main loops
 	else if (m_field.isFinished()) {
 		// This case should be handled by the early exit when a solution is found.
 		// If reached, it means a finished state was achieved but not returned immediately.
-		Print << U"Finished (but not caught earlier): {}ms"_fmt(stopwatch.ms());
+		// Print << U"Finished (but not caught earlier): {}ms"_fmt(stopwatch.ms());
 	}
 	else {
-		Print << U"Not finished (max depth or empty beam): {}ms"_fmt(stopwatch.ms());
+		// Print << U"Not finished (max depth or empty beam): {}ms"_fmt(stopwatch.ms());
 	}
 	return bestSolution;
 }
