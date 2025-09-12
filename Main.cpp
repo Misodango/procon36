@@ -57,6 +57,15 @@ void CollectData(int32 num_samples_to_generate, const FilePath& output_directory
 
 void Main()
 {
+	// ウィンドウサイズを大きく設定
+	Window::Resize(1200, 900);
+	
+	// ウィンドウスタイルをサイズ変更可能に設定
+	Window::SetStyle(WindowStyle::Sizable);
+	
+	// シーンサイズもウィンドウサイズに合わせて設定
+	Scene::Resize(1200, 900);
+	
 	Scene::SetBackground(ColorF{ 0.6, 0.8, 0.7 });
 	Window::SetTitle(U"Puzzle Game & Data Collector");
 
