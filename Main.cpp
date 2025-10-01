@@ -10,7 +10,6 @@
 *
 * ゲーム全体の管理
 *
-* 0515 ひろし参上！
 */
 
 static const URL DEFAULT_HTTP_URL = []() {
@@ -18,7 +17,7 @@ static const URL DEFAULT_HTTP_URL = []() {
 	const FilePath envPath = U"env.json";
 	const JSON env_json = JSON::Load(envPath);
 	if (env_json) {
-		if (env_json && env_json.contains(U"httpUrl")) {
+		if (env_json.contains(U"httpUrl")) {
 			url = env_json[U"httpUrl"].getString();
 		}
 	}

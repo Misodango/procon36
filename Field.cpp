@@ -53,7 +53,6 @@ namespace {
 			const JSON j = JSON::Load(envPath);
 			if (j && j.contains(U"proconToken")) {
 				const String t = j[U"proconToken"].getString();
-				Console << U"token:" << t;
 				if (!t.isEmpty()) return t;
 			}
 		}
