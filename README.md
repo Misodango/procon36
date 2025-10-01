@@ -130,7 +130,7 @@
     -   コンストラクタのデフォルト引数 (`beamWidth`, `maxDepth`) を変更します。
     -   `BeamSearchAlgorithm` を呼び出している箇所で直接値を指定します。
 -   **`IterativeBeamSearchAlgorithm`**:
-    -   コンストラクタのデフォルト引数 (`beamWidthPerStep`, `dethPerStep`, `maxTotalSteps`) を変更します。
+    -   コンストラクタのデフォルト引数 (`beamWidthPerStep`, `depthPerStep`, `maxTotalSteps`) を変更します。
 
 **トレードオフ**:
 -   `beamWidth` を増やすと、解を見つける可能性は高まりますが、計算量とメモリ使用量が増加します。

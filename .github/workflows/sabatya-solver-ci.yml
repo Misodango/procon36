@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build sabatya beam solver harness
-        run: g++ -Ofast -std=c++23 -fopenmp sabatya_beam_ver2.cpp -o sabatya_beam_ci
+        run: g++ -Ofast -std=c++23 -fopenmp single_solver.cpp -o single_solver_ci
 
       - name: Run regression sweep
-        run: ./sabatya_beam_ci --test --test-sizes "8,10,12,14,16,18,20,22,24" --no-json
+        run: ./single_solver_ci --test --test-sizes "8,10,12,14,16,18,20,22,24" --no-json
