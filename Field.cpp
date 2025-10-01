@@ -46,6 +46,31 @@ namespace {
 		}
 		return positions; // Should ideally always find 2 for valid entities, or 0 if not on board (e.g. during diff)
 	}
+
+	String LoadProconToken() {
+		const FilePath envPath = U"env.json";
+		if (FileSystem::Exists(envPath)) {
+			const JSON j = JSON::Load(envPath);
+			if (j && j.contains(U"proconToken")) {
+				const String t = j[U"proconToken"].getString();
+				Console << U"token:" << t;
+				if (!t.isEmpty()) return t;
+			}
+		}
+		return U"";
+	}
+
+	HashTable<String, String> BuildAuthHeaders() {
+		HashTable<String, String> headers;
+		const String token = LoadProconToken();
+		if (!token.isEmpty()) {
+			headers[U"Procon-Token"] = token;
+		}
+		else {
+			Print << U"[WARN] Procon-Token が設定されていません。";
+		}
+		return headers;
+	}
 }
 
 /*
@@ -192,7 +217,14 @@ Field Field::fromPath(const FilePath& path) {
 */
 Field Field::fromHTTP(const String& url)
 {
-	const HashTable<String, String> headers = { { U"Procon-Token", U"player3" } };
+	HashTable<String, String> headers;
+	const String token = LoadProconToken();
+	if (!token.isEmpty()) {
+		headers[U"Procon-Token"] = token;
+	}
+	else {
+		Print << U"[WARN] Procon-Token が設定されていません。";
+	}
 	const String timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
 	const FilePath filePath = FileSystem::FullPath(U"match_data_" + timestamp + U".json");
 
@@ -238,28 +270,26 @@ bool Field::isValidField(const JSON& json)
 */
 
 bool Field::submitSolution(const Solution& solution, const String& url) {
-	// Convert solution to the required JSON format
 	String timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
 	JSON submissionJson = solution.toSubmissionJSON();
 	const FilePath solutionFilePath = FileSystem::FullPath(U"solution_" + timestamp + U".json");
-	// Save the solution JSON to a file for debugging purposes
 	submissionJson.save(solutionFilePath);
 
-	// Convert JSON to string for HTTP body
-	String jsonString = submissionJson.format();
+	const String jsonString = submissionJson.format();
 
-	// Set up headers for JSON content
-	const HashTable<String, String> headers = {
+	HashTable<String, String> headers = {
 		{ U"Content-Type", U"application/json" },
-		{ U"Procon-Token", U"player3" }
 	};
+	const String token = LoadProconToken();
+	if (!token.isEmpty()) {
+		headers[U"Procon-Token"] = token;
+	} else {
+		Print << U"[WARN] Procon-Token が設定されていません。";
+	}
 
-	// Create a memory writer to capture the response
-	
 	timestamp = DateTime::Now().format(U"yyyyMMdd_HHmmss_fff");
 	const FilePath filePath = FileSystem::FullPath(U"submission_data_" + timestamp + U".json");
 
-	// Send HTTP POST request
 	HTTPResponse response = SimpleHTTP::Post(
 		url,
 		headers,
@@ -274,13 +304,11 @@ bool Field::submitSolution(const Solution& solution, const String& url) {
 			int32 revision = responseJson[U"revision"].get<int32>();
 			Print << U"Solution submitted successfully! Revision: " << revision;
 			return true;
-		}
-		else {
+		} else {
 			Print << U"Solution submitted but unexpected response format: " << FromEnum(response.getStatusCode());
 			return false;
 		}
-	}
-	else {
+	} else {
 		Print << U"Failed to submit solution. HTTP status:" << FromEnum(response.getStatusCode());
 		return false;
 	}

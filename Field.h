@@ -37,6 +37,9 @@ public:
 	// ランダムにフィールドを生成する関数
 	static Field random(int32 size);
 
+	// env.jsonからTokenを取得する
+	static String loadToken(const FilePath& envPath = U"env.json");
+
 	static Field fromJSON(const JSON& json);
 
 	static Field fromPath(const FilePath& path);
