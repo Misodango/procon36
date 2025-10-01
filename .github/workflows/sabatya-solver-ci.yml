@@ -1,0 +1,21 @@
+name: Sabatya Solver CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build sabatya beam solver harness
+        run: g++ -Ofast -std=c++23 -fopenmp single_solver.cpp -o single_solver_ci
+
+      - name: Run regression sweep
+        run: ./single_solver_ci --test --test-sizes "8,10,12,14,16,18,20,22,24" --no-json
