@@ -156,8 +156,8 @@
 
 ```json
 {
-  "proconToken": "player998244353",
-  "httpUrl": "http://192.168.2.101:50000"
+  "proconToken": "example-token",
+  "httpUrl": "http://192.168.12.34:567"
 }
 ```
 
