@@ -126,35 +126,33 @@ Solution BeamSearchAlgorithm::run() {
 
 					futures.emplace_back(std::async(std::launch::async,
 						[&work_items, start_idx, end_idx, &current_field_const_ref]() {
-						std::vector<Operation> local_thread_operations;
-						// Estimate based on chunk size, can be refined
-						local_thread_operations.reserve(end_idx - start_idx); 
-						int32 keep_min_pair_diff = 0; // This can be adjusted based on your criteria
-						for (size_t item_idx = start_idx; item_idx < end_idx; ++item_idx) {
-							const auto& item = work_items[item_idx];
-							const int32 s = item.s;
-							const int32 x = item.x;
-							const int32 y = item.y;
+							std::vector<Operation> local_thread_operations;
+							// Estimate based on chunk size, can be refined
+							local_thread_operations.reserve(end_idx - start_idx);
 
-							if (2 * s < keep_min_pair_diff) continue; 
+							for (size_t item_idx = start_idx; item_idx < end_idx; ++item_idx) {
+								const auto& item = work_items[item_idx];
+								const int32 s = item.s;
+								const int32 x = item.x;
+								const int32 y = item.y;
 
-							// Original loop's core logic
-							if (current_field_const_ref.isPairRight(x, y)) continue;
+								// Original loop's core logic
+								if (current_field_const_ref.isPairRight(x, y)) continue;
 
-							Field tempFieldForDiff = current_field_const_ref; // Copy for rotateAndGetDiff
-							auto [pairDiff, scoreDiff] = tempFieldForDiff.rotateAndGetDiff(x, y, s);
-							if (pairDiff < keep_min_pair_diff) continue; // Skip if pairDiff is too low
-							keep_min_pair_diff = std::max(keep_min_pair_diff, pairDiff);
-							// Calculate entropy diff using the new differential method
-							// This is called on the state *before* the rotation.
-							float entropyDiff = current_field_const_ref.calculateEntropyDiffForRotation(x, y, s);
+								Field tempFieldForDiff = current_field_const_ref; // Copy for rotateAndGetDiff
+								auto [pairDiff, scoreDiff] = tempFieldForDiff.rotateAndGetDiff(x, y, s);
 
-							bool hasUnpaired = false;
-							for (int r_i = 0; r_i < s; ++r_i) {
-								for (int r_j = 0; r_j < s; ++r_j) {
-									if (!current_field_const_ref.isPair(x + r_i, y + r_j)) {
-										hasUnpaired = true;
-										break;
+								// Calculate entropy diff using the new differential method
+								// This is called on the state *before* the rotation.
+								float entropyDiff = current_field_const_ref.calculateEntropyDiffForRotation(x, y, s);
+
+								bool hasUnpaired = false;
+								for (int r_i = 0; r_i < s; ++r_i) {
+									for (int r_j = 0; r_j < s; ++r_j) {
+										if (!current_field_const_ref.isPair(x + r_i, y + r_j)) {
+											hasUnpaired = true;
+											break;
+										}
 									}
 									if (hasUnpaired) break;
 								}
@@ -229,10 +227,12 @@ Solution BeamSearchAlgorithm::run() {
 timeout_exit_label:; // Label for goto, placed after the main loops
 
 	if (not bestSolution.ops.empty() && stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
-		// Print << U"Timeout: Returning best solution found so far after {}ms."_fmt(stopwatch.ms());
-	} else if (bestSolution.ops.empty() && stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
-		// Print << U"Timeout: No solution found within {}ms."_fmt(stopwatch.ms());
-	} else if (m_field.isFinished()) {
+		Print << U"Timeout: Returning best solution found so far after {}ms."_fmt(stopwatch.ms());
+	}
+	else if (bestSolution.ops.empty() && stopwatch.sF() >= INTERNAL_TIMEOUT_SECONDS) {
+		Print << U"Timeout: No solution found within {}ms."_fmt(stopwatch.ms());
+	}
+	else if (m_field.isFinished()) {
 		// This case should be handled by the early exit when a solution is found.
 		// If reached, it means a finished state was achieved but not returned immediately.
 		// Print << U"Finished (but not caught earlier): {}ms"_fmt(stopwatch.ms());
