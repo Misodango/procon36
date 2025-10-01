@@ -10,10 +10,22 @@
 *
 * ゲーム全体の管理
 *
-* 0515 ひろし参上！
 */
 
-static const URL DEFAULT_HTTP_URL = U"192.168.3.33:3000";
+static const URL DEFAULT_HTTP_URL = []() {
+	String url;
+	const FilePath envPath = U"env.json";
+	const JSON env_json = JSON::Load(envPath);
+	if (env_json) {
+		if (env_json.contains(U"httpUrl")) {
+			url = env_json[U"httpUrl"].getString();
+		}
+	}
+	if (url.isEmpty()) {
+		url = U"192.168.3.33:12345"; // フォールバック
+	}
+	return url;
+	}();
 
 // Helper function to convert Field to JSON
 JSON FieldToJSON(const Field& field) {
@@ -310,8 +322,8 @@ void Main()
 
 			if (solvedSolution && !submissionInProgress) {
 				if (SimpleGUI::Button(U"Submit Solution", Vec2{ 250, Scene::Height() - 150 }, 180)) {
-					submissionTask = Async([solvedSolution]() -> bool {
-						return Field::submitSolution(*solvedSolution);
+					submissionTask = Async([solvedSolution, customHTTPURL]() -> bool {
+						return Field::submitSolution(*solvedSolution, customHTTPURL.text);
 					});
 					submissionInProgress = true;
 					submissionSuccess = false;
