@@ -183,6 +183,9 @@
     <ClCompile Include="DominoTiling.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="single_solver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -889,6 +892,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DominoTiling.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Field.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FieldEvaluator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FieldRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ZobristHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
