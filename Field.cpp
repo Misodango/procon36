@@ -59,17 +59,6 @@ namespace {
 		return U"";
 	}
 
-	HashTable<String, String> BuildAuthHeaders() {
-		HashTable<String, String> headers;
-		const String token = LoadProconToken();
-		if (!token.isEmpty()) {
-			headers[U"Procon-Token"] = token;
-		}
-		else {
-			Print << U"[WARN] Procon-Token が設定されていません。";
-		}
-		return headers;
-	}
 }
 
 /*
@@ -78,7 +67,7 @@ namespace {
 *  @return 0埋めされたフィールド
 */
 
-Field::Field(int32 size) : size(size), entityCount(size* size / 2 - 1), entities(size, size, 0) {}
+Field::Field(int32 size) : size(size), entityCount(size* size / 2 - 1), entities(size, size, 0), startsAt(2e9) {}
 
 /*
 *  @brief フィールドのコンストラクタ
@@ -108,7 +97,7 @@ Field::Field(int32 size, bool isCompleted, int32 seed) : Field(size) {
 *  @return コピーされたフィールド
 */
 
-Field::Field(const Field& other) : size(other.size), entityCount(other.entityCount), entities(other.entities) {}
+Field::Field(const Field& other) : size(other.size), entityCount(other.entityCount), entities(other.entities), startsAt(2e9) {}
 
 /*
 *  @brief フィールドのコピー代入演算子
@@ -282,7 +271,8 @@ bool Field::submitSolution(const Solution& solution, const String& url) {
 	const String token = LoadProconToken();
 	if (!token.isEmpty()) {
 		headers[U"Procon-Token"] = token;
-	} else {
+	}
+	else {
 		Print << U"[WARN] Procon-Token が設定されていません。";
 	}
 
@@ -303,11 +293,13 @@ bool Field::submitSolution(const Solution& solution, const String& url) {
 			int32 revision = responseJson[U"revision"].get<int32>();
 			Print << U"Solution submitted successfully! Revision: " << revision;
 			return true;
-		} else {
+		}
+		else {
 			Print << U"Solution submitted but unexpected response format: " << FromEnum(response.getStatusCode());
 			return false;
 		}
-	} else {
+	}
+	else {
 		Print << U"Failed to submit solution. HTTP status:" << FromEnum(response.getStatusCode());
 		return false;
 	}
@@ -342,36 +334,6 @@ void Field::rotate(int32 x, int32 y, int32 n) {
 	for (int32 i = 0; i < n; ++i) {
 		for (int32 j = 0; j < n; ++j) {
 			entities[y + j][x + n - 1 - i] = temp[i][j];
-		}
-	}
-}
-
-/*
-* @brief 任意の座標に導きを適用（逆回転）
-* @param x x座標 y y座標 n サイズ
-* @return void
-*/
-
-void Field::rotateReverse(int32 x, int32 y, int32 n) {
-	// 範囲外チェック
-	if (x < 0 || y < 0 || x + n > size || y + n > size) {
-		return;
-	}
-	// n <= 1の回転は無効
-	if (n <= 1) {
-		return;
-	}
-	Grid<int32> temp(n, n);
-	// 回転前の値を一時的な配列にコピー
-	for (int32 i = 0; i < n; ++i) {
-		for (int32 j = 0; j < n; ++j) {
-			temp[i][j] = entities[y + i][x + j];
-		}
-	}
-	// 90度反時計回りに回転させて元の配列にコピー
-	for (int32 i = 0; i < n; ++i) {
-		for (int32 j = 0; j < n; ++j) {
-			entities[y + n - 1 - j][x + i] = temp[i][j];
 		}
 	}
 }
@@ -475,57 +437,6 @@ bool Field::isPair(int32 x, int32 y) const {
 	return false;
 }
 
-/*
-* @brief 左上から連続のペアを数える
-* @return int32
-*/
-
-int32 Field::countPairsFromTopLeftHorizontal() const {
-	const int32 dx[4] = { 1, 0, -1, 0 };
-	const int32 dy[4] = { 0, 1, 0, -1 };
-	int32 res = 0;
-	Array<bool> seen(size * size / 2, false);
-	for (int32 i : step(size)) {
-		for (int32 j : step(size)) {
-			int32 cur = entities[i][j];
-			if (seen[cur]) {
-				continue;
-			}
-			if (!isPair(i, j)) {
-				return res;
-			}
-			res++;
-			seen[cur] = true;
-		}
-	}
-	return res;
-}
-
-/*
-* @brief 左上から連続のペアを数える
-* @return int32
-*/
-
-int32 Field::countPairsFromTopLeftVertical() const {
-	const int32 dx[4] = { 1, 0, -1, 0 };
-	const int32 dy[4] = { 0, 1, 0, -1 };
-	int32 res = 0;
-	Array<bool> seen(size * size / 2, false);
-	for (int32 i : step(size)) {
-		for (int32 j : step(size)) {
-			int32 cur = entities[j][i];
-			if (seen[cur]) {
-				continue;
-			}
-			if (!isPair(j, i)) {
-				return res;
-			}
-			res++;
-			seen[cur] = true;
-		}
-	}
-	return res;
-}
 
 /*
 * @brief 差分更新
@@ -788,19 +699,6 @@ size_t Field::computeHash() const {
 	return static_cast<size_t>(currentHash);
 }
 
-/*
-* @brief フィールドを標準ハッシュ値に変換 (旧computeHash)
-* @return size_t
-*/
-size_t Field::computeStdHash() const {
-	size_t hash = 0;
-	for (int32 y : step(size)) {
-		for (int32 x : step(size)) {
-			hash ^= std::hash<int32>()(entities[y][x]) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-		}
-	}
-	return hash;
-}
 
 /*
 * @brief フィールドの評価値を計算する（ビームサーチ用）
@@ -837,155 +735,6 @@ std::vector<std::pair<int32, int32>> Field::getEntityPositions(int32 entity) con
 	}
 
 	return positions;
-}
-
-/*
-* @brief 指定エンティティがペアを形成しているかチェック
-* @param entity エンティティ値
-* @return ペアを形成している場合true
-*/
-bool Field::isEntityPaired(int32 entity) const {
-	auto positions = getEntityPositions(entity);
-	if (positions.size() != 2) return false;
-
-	auto [x1, y1] = positions[0];
-	auto [x2, y2] = positions[1];
-
-	return abs(x1 - x2) + abs(y1 - y2) == 1;
-}
-
-/*
-* @brief 指定エンティティのユークリッド距離を計算
-* @param entity エンティティ値
-* @return ユークリッド距離（ペアが見つからない場合は-1）
-*/
-float Field::getEntityEuclideanDistance(int32 entity) const {
-	auto positions = getEntityPositions(entity);
-	if (positions.size() != 2) return -1.0f;
-
-	auto [x1, y1] = positions[0];
-	auto [x2, y2] = positions[1];
-
-	float dx = static_cast<float>(x1 - x2);
-	float dy = static_cast<float>(y1 - y2);
-
-	return std::sqrt(dx * dx + dy * dy);
-}
-
-/*
-* @brief 全エンティティのユークリッド距離の合計を計算
-* @return 全エンティティのユークリッド距離の合計
-*/
-float Field::getTotalEuclideanDistance() const {
-	float total = 0.0f;
-
-	for (int32 entity = 1; entity <= entityCount; ++entity) {
-		float distance = getEntityEuclideanDistance(entity);
-		if (distance >= 0) {
-			total += distance;
-		}
-	}
-
-	return total;
-}
-
-/*
-* @brief 指定位置から最も近い同じエンティティまでの距離を計算
-* @param x X座標
-* @param y Y座標
-* @return 最も近い同じエンティティまでのユークリッド距離
-*/
-float Field::getNearestSameEntityDistance(int32 x, int32 y) const {
-	int32 targetEntity = entities[y][x];
-	if (targetEntity == 0) return -1.0f;
-
-	float minDistance = std::numeric_limits<float>::max();
-	bool found = false;
-
-	for (int32 cy = 0; cy < size; ++cy) {
-		for (int32 cx = 0; cx < size; ++cx) {
-			if (cx == x && cy == y) continue; // 自分自身は除外
-
-			if (entities[cy][cx] == targetEntity) {
-				float dx = static_cast<float>(x - cx);
-				float dy = static_cast<float>(y - cy);
-				float distance = std::sqrt(dx * dx + dy * dy);
-
-				if (distance < minDistance) {
-					minDistance = distance;
-					found = true;
-				}
-			}
-		}
-	}
-
-	return found ? minDistance : -1.0f;
-}
-
-/*
-* @brief 回転操作が有効かどうかを判定
-* @param x X座標
-* @param y Y座標
-* @param n 回転サイズ
-* @return 有効な回転操作の場合true
-*/
-bool Field::isValidRotation(int32 x, int32 y, int32 n) const {
-	// 範囲チェック
-	if (x < 0 || y < 0 || x + n > size || y + n > size) {
-		return false;
-	}
-
-	// サイズチェック
-	if (n <= 1) {
-		return false;
-	}
-
-	return true;
-}
-
-
-// ヘルパー関数の最適化版
-/*
-* @brief 高速化されたエンティティ位置検索
-* @param entityValue エンティティ値
-* @param entities エンティティグリッド
-* @param fieldSize フィールドサイズ
-* @return 位置のペア
-*/
-inline std::vector<std::pair<int32, int32>> findEntityPositionsFast(
-	int32 entityValue, const Grid<int32>& entities, int32 fieldSize) {
-
-	std::vector<std::pair<int32, int32>> positions;
-	positions.reserve(2);  // 常に2個なので予約
-
-	if (entityValue == 0) return positions;
-
-	// キャッシュフレンドリーな行優先アクセス
-	for (int32 y = 0; y < fieldSize; ++y) {
-		const int32* row = &entities[y][0];  // 行の先頭ポインタを取得
-		for (int32 x = 0; x < fieldSize; ++x) {
-			if (row[x] == entityValue) {
-				positions.emplace_back(x, y);
-				if (positions.size() == 2) return positions;
-			}
-		}
-	}
-	return positions;
-}
-
-// 高速化ヘルパー関数
-inline float fastSqrt(float x) {
-	return std::sqrt(x); // コンパイラの最適化に任せる
-}
-
-inline int32 manhattan(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
-	return std::abs(x1 - x2) + std::abs(y1 - y2);
-}
-
-inline float euclidean(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
-	float dx = static_cast<float>(x1 - x2);
-	float dy = static_cast<float>(y1 - y2);
-	return fastSqrt(dx * dx + dy * dy);
 }
 
 
@@ -1445,13 +1194,3 @@ float Field::calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) co
 	return new_local_score_sum - old_local_score_sum;
 }
 
-Array<Field> Field::generateRandomCompleteFieldsAll() {
-	DominoTiling dominoTiling(size);
-	Array<Field> completeFields;
-	for (const auto& field : dominoTiling.getAllPatterns()) {
-		Field newField(size, entityCount);
-		newField.entities = field;
-		completeFields.push_back(newField);
-	}
-	return completeFields;
-}
