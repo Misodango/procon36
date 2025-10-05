@@ -5,8 +5,6 @@
 #include <algorithm> // For std::min, std::max, std::sort
 #include <iterator>  // For std::make_move_iterator
 
-
-
 // Constructor definition
 BeamSearchAlgorithm::BeamSearchAlgorithm(const Field& field, int32 beamWidth, int32 maxDepth)
 	: m_field(field), m_beamWidth(beamWidth), m_maxDepth(maxDepth) {
@@ -26,7 +24,96 @@ struct MultiOperationWorkItem {
 	}
 };
 
+// IDA*-like iterative deepening candidate generation
+std::vector<BeamSearchAlgorithm::NextStateCandidate> BeamSearchAlgorithm::generateNextStatesIDA(
+	const BeamState& current,
+	int32 maxCandidates,
+	float scoreThreshold
+) {
+	std::vector<NextStateCandidate> candidates;
+	const int32 fieldSize = current.field.getSize();
 
+	// Priority queue to incrementally explore operations
+	std::vector<OperationScore> operationScores;
+	operationScores.reserve(fieldSize * fieldSize * fieldSize / 8); // Rough estimate
+
+	// Phase 1: Quick evaluation of all operations (no field copy)
+	// Start from larger rotations as they tend to have more impact
+	for (int32 s_loop = fieldSize - 1; s_loop >= 2; --s_loop) {
+		for (int32 x_loop = 0; x_loop <= fieldSize - s_loop; ++x_loop) {
+			for (int32 y_loop = 0; y_loop <= fieldSize - s_loop; ++y_loop) {
+				if (current.field.isPairRight(x_loop, y_loop) || current.field.isPairDown(x_loop, y_loop)) continue;
+				// Quick heuristic: estimate without full rotation
+				// Use a lightweight check first
+				Field tempField = current.field;
+				auto [pairDiff, scoreDiff] = tempField.rotateAndGetDiff(x_loop, y_loop, s_loop);
+
+				// Only keep promising operations
+				if (pairDiff > 0 || scoreDiff > scoreThreshold) {
+					operationScores.push_back({ x_loop, y_loop, s_loop, pairDiff, scoreDiff });
+				}
+			}
+		}
+	}
+
+	// Phase 2: Sort by quality and take top-K
+	std::sort(operationScores.begin(), operationScores.end());
+
+	// Phase 3: Generate actual candidates only for top operations
+	int32 candidateLimit = std::min(maxCandidates, static_cast<int32>(operationScores.size()));
+	candidates.reserve(candidateLimit);
+
+	// Parallelize the final candidate generation
+	std::vector<std::future<NextStateCandidate>> futures;
+	const size_t num_threads = std::max(1u, std::thread::hardware_concurrency());
+
+	for (int32 i = 0; i < candidateLimit; ++i) {
+		const auto& opScore = operationScores[i];
+
+		// Create candidates in parallel batches
+		if (i % num_threads == 0 && i + num_threads < candidateLimit) {
+			// Batch processing
+			futures.clear();
+			int32 batchEnd = std::min(candidateLimit, i + static_cast<int32>(num_threads));
+
+			for (int32 j = i; j < batchEnd; ++j) {
+				const auto& op = operationScores[j];
+				futures.emplace_back(std::async(std::launch::async,
+					[&current, op]() {
+						Field nextField = current.field;
+						auto [pairDiff, scoreDiff] = nextField.rotateAndGetDiff(op.x, op.y, op.size);
+
+						return NextStateCandidate{
+							nextField,
+							{{op.x, op.y, op.size}},
+							pairDiff * 100.0f + scoreDiff,
+							1
+						};
+					}));
+			}
+
+			for (auto& fut : futures) {
+				candidates.push_back(fut.get());
+			}
+
+			i = batchEnd - 1; // Adjust loop counter
+		}
+		else {
+			// Single operation
+			Field nextField = current.field;
+			auto [pairDiff, scoreDiff] = nextField.rotateAndGetDiff(opScore.x, opScore.y, opScore.size);
+
+			candidates.push_back({
+				nextField,
+				{{opScore.x, opScore.y, opScore.size}},
+				pairDiff * 100.0f + scoreDiff,
+				1
+			});
+		}
+	}
+
+	return candidates;
+}
 
 std::vector<BeamSearchAlgorithm::NextStateCandidate> BeamSearchAlgorithm::generateNextStates(
 	const BeamState& current,
@@ -34,85 +121,33 @@ std::vector<BeamSearchAlgorithm::NextStateCandidate> BeamSearchAlgorithm::genera
 	int32 topKSingle,   // 単手候補数
 	int32 topKMulti      // 複数手候補数
 ) {
+	// Use IDA*-like approach with dynamic threshold
+	// Start with aggressive pruning, then relax if needed
 	std::vector<NextStateCandidate> candidates;
-	const int32 fieldSize = current.field.getSize();
-	
-	// Generate work items for parallelization
-	std::vector<WorkItem> work_items;
-	work_items.reserve(fieldSize * fieldSize * fieldSize);
-	
-	for (int32 s_loop = fieldSize - 1; s_loop >= 2; --s_loop) {
-		for (int32 x_loop = 0; x_loop <= fieldSize - s_loop; ++x_loop) {
-			for (int32 y_loop = 0; y_loop <= fieldSize - s_loop; ++y_loop) {
-				work_items.push_back({ s_loop, x_loop, y_loop });
-			}
-		}
+
+	// Adaptive threshold based on current score
+	float initialThreshold = -5.0f; // Allow slightly negative moves for exploration
+
+	candidates = generateNextStatesIDA(current, topKSingle, initialThreshold);
+
+	// If we got too few candidates, relax the threshold
+	if (candidates.size() < static_cast<size_t>(topKSingle / 2)) {
+		candidates = generateNextStatesIDA(current, topKSingle, initialThreshold - 10.0f);
 	}
-	
-	if (!work_items.empty()) {
-		std::vector<std::future<std::vector<NextStateCandidate>>> futures;
-		
-		const size_t num_threads_to_use = std::max(1u, std::thread::hardware_concurrency());
-		size_t items_per_thread = (work_items.size() + num_threads_to_use - 1) / num_threads_to_use;
-		if (items_per_thread == 0 && !work_items.empty()) items_per_thread = 1;
-		
-		const Field& current_field_const_ref = current.field;
-		
-		for (size_t i = 0; i < num_threads_to_use; ++i) {
-			size_t start_idx = i * items_per_thread;
-			size_t end_idx = std::min(work_items.size(), (i + 1) * items_per_thread);
-			
-			if (start_idx >= end_idx) continue;
-			
-			futures.emplace_back(std::async(std::launch::async,
-				[&work_items, start_idx, end_idx, &current_field_const_ref]() {
-					std::vector<NextStateCandidate> local_candidates;
-					local_candidates.reserve(end_idx - start_idx);
-					
-					for (size_t item_idx = start_idx; item_idx < end_idx; ++item_idx) {
-						const auto& item = work_items[item_idx];
-						const int32 s = item.s;
-						const int32 x = item.x;
-						const int32 y = item.y;
-						
-						Field next = current_field_const_ref;
-						auto [pairDiff, scoreDiff] = next.rotateAndGetDiff(x, y, s);
-						
-						local_candidates.push_back({
-							next,
-							{{x, y, s}},
-							pairDiff * 100.0f + scoreDiff,
-							1
-						});
-					}
-					return local_candidates;
-				}));
-		}
-		
-		candidates.clear();
-		candidates.reserve(work_items.size());
-		
-		for (auto& fut : futures) {
-			std::vector<NextStateCandidate> thread_candidates = fut.get();
-			candidates.insert(candidates.end(),
-				std::make_move_iterator(thread_candidates.begin()),
-				std::make_move_iterator(thread_candidates.end()));
-		}
-	}
-	
-	// Sort and limit candidates
+
+	// Sort by estimated score
 	std::sort(candidates.begin(), candidates.end(),
 		[](const NextStateCandidate& a, const NextStateCandidate& b) {
 			return a.estimatedScore > b.estimatedScore;
 		});
-	
-	if(candidates.size() > static_cast<size_t>(topKSingle)) {
+
+	// Limit to requested size
+	if (candidates.size() > static_cast<size_t>(topKSingle)) {
 		candidates.resize(topKSingle);
 	}
-	
+
 	return candidates;
 }
-
 
 Solution BeamSearchAlgorithm::run() {
 	// 初期状態
@@ -164,11 +199,13 @@ Solution BeamSearchAlgorithm::run() {
 				bestSolution = current.solution;
 			}
 
-			// Generate next state candidates using the new method
+			// Generate next state candidates using IDA*-like method
 			operationGenerationStopwatch.reset();
 			operationGenerationStopwatch.start();
-			
-			std::vector<NextStateCandidate> candidates = generateNextStates(current, 2, 200, 50);
+
+			// Adaptive candidate count based on depth
+			int32 candidatesPerState = std::max(50, 200 - depth * 5);
+			std::vector<NextStateCandidate> candidates = generateNextStates(current, 2, candidatesPerState, 50);
 
 			// Process each candidate
 			for (const auto& candidate : candidates) {

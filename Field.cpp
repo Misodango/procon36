@@ -34,8 +34,7 @@ namespace {
 	// Helper function to find positions of an entity
 	std::vector<std::pair<int32, int32>> findEntityPositions(int32 entityValue, const Grid<int32>& entities, int32 fieldSize) {
 		std::vector<std::pair<int32, int32>> positions;
-		if (entityValue == 0) return positions; // Skip blank entity
-
+		// All entity values from 0 to entityCount are valid
 		for (int32 y = 0; y < fieldSize; ++y) {
 			for (int32 x = 0; x < fieldSize; ++x) {
 				if (entities[y][x] == entityValue) {
@@ -44,7 +43,7 @@ namespace {
 				}
 			}
 		}
-		return positions; // Should ideally always find 2 for valid entities, or 0 if not on board (e.g. during diff)
+		return positions; // Should ideally always find 2 for valid entities
 	}
 
 	String LoadProconToken() {
@@ -459,26 +458,21 @@ std::pair<int32, float> Field::rotateAndGetDiff(int32 x, int32 y, int32 n) {
 	std::unordered_set<int32> uniqueEntitiesInAffectedArea;
 	for (int32 cy = checkStartY; cy < checkEndY; ++cy) {
 		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
-			if (entities[cy][cx] != 0) { // Assuming 0 is blank/irrelevant for pairing
-				uniqueEntitiesInAffectedArea.insert(entities[cy][cx]);
-			}
+			uniqueEntitiesInAffectedArea.insert(entities[cy][cx]);
 		}
 	}
 	// Also include entities within the rotation box itself, as their relative positions change
 	for (int32 r_y = 0; r_y < n; ++r_y) {
 		for (int32 r_x = 0; r_x < n; ++r_x) {
-			if (entities[y + r_y][x + r_x] != 0) {
-				uniqueEntitiesInAffectedArea.insert(entities[y + r_y][x + r_x]);
-			}
+			uniqueEntitiesInAffectedArea.insert(entities[y + r_y][x + r_x]);
 		}
 	}
-
 
 	Array<bool> seenBefore(this->entityCount + 1, false); // Max entity value + 1
 	for (int32 cy = checkStartY; cy < checkEndY; ++cy) {
 		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
 			int32 currentEntity = entities[cy][cx];
-			if (currentEntity != 0 && !seenBefore[currentEntity] && isPair(cx, cy)) {
+			if (!seenBefore[currentEntity] && isPair(cx, cy)) {
 				beforePairs++;
 				beforeScoreFormedPairs += ScoreFactorFormedPairBonus;
 				seenBefore[currentEntity] = true;
@@ -506,7 +500,102 @@ std::pair<int32, float> Field::rotateAndGetDiff(int32 x, int32 y, int32 n) {
 	for (int32 cy = checkStartY; cy < checkEndY; ++cy) {
 		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
 			int32 currentEntity = entities[cy][cx];
-			if (currentEntity != 0 && !seenAfter[currentEntity] && isPair(cx, cy)) {
+			if (!seenAfter[currentEntity] && isPair(cx, cy)) {
+				afterPairs++;
+				afterScoreFormedPairs += ScoreFactorFormedPairBonus;
+				seenAfter[currentEntity] = true;
+			}
+		}
+	}
+
+	float sumEuclideanDistAfter = 0.0f;
+	for (int32 entity : uniqueEntitiesInAffectedArea) {
+		auto positions = findEntityPositions(entity, this->entities, this->size);
+		if (positions.size() == 2) {
+			float dx = static_cast<float>(positions[0].first - positions[1].first);
+			float dy = static_cast<float>(positions[0].second - positions[1].second);
+			sumEuclideanDistAfter += std::sqrt(dx * dx + dy * dy);
+		}
+	}
+
+	// Calculate differences
+	int32 pairDiffCount = afterPairs - beforePairs;
+	float formedPairScoreDiff = afterScoreFormedPairs - beforeScoreFormedPairs;
+	float euclideanScoreDiff = (sumEuclideanDistBefore - sumEuclideanDistAfter) * ScoreFactorEuclideanDistance;
+
+	// Return the difference in pair count and total score difference
+	return { pairDiffCount, formedPairScoreDiff + euclideanScoreDiff };
+}
+
+/*
+* @brief 差分更新（複数手対応版）
+* @param solution 回転操作のリスト
+* return std::pair<int32, float> (ペアの増減数, 評価値の増減)
+* @note 複数手を一括で適用し、その前後の差分を計算する
+*/
+std::pair<int32, float> Field::rotateMultipleAndGetDiff(const Solution& solution)
+{
+	int32 x = solution.ops[0].x;
+	int32 y = solution.ops[0].y;
+	int32 n = solution.ops[0].n;
+
+	// 回転前の適用領域と周囲のペアをカウント
+	int32 beforePairs = 0;
+	float beforeScoreFormedPairs = 0; // Score from newly formed/broken adjacent pairs
+
+	const int32 checkStartX = std::max(0, x - 1);
+	const int32 checkStartY = std::max(0, y - 1);
+	const int32 checkEndX = std::min(size, x + n + 1);
+	const int32 checkEndY = std::min(size, y + n + 1);
+
+	std::unordered_set<int32> uniqueEntitiesInAffectedArea;
+	for (int32 cy = checkStartY; cy < checkEndY; ++cy) {
+		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
+			uniqueEntitiesInAffectedArea.insert(entities[cy][cx]);
+		}
+	}
+	// Also include entities within the rotation box itself, as their relative positions change
+	for (int32 r_y = 0; r_y < n; ++r_y) {
+		for (int32 r_x = 0; r_x < n; ++r_x) {
+			uniqueEntitiesInAffectedArea.insert(entities[y + r_y][x + r_x]);
+		}
+	}
+
+	Array<bool> seenBefore(this->entityCount + 1, false); // Max entity value + 1
+	for (int32 cy = checkStartY; cy < checkEndY; ++cy) {
+		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
+			int32 currentEntity = entities[cy][cx];
+			if (!seenBefore[currentEntity] && isPair(cx, cy)) {
+				beforePairs++;
+				beforeScoreFormedPairs += ScoreFactorFormedPairBonus;
+				seenBefore[currentEntity] = true;
+			}
+		}
+	}
+
+	float sumEuclideanDistBefore = 0.0f;
+	for (int32 entity : uniqueEntitiesInAffectedArea) {
+		auto positions = findEntityPositions(entity, this->entities, this->size);
+		if (positions.size() == 2) {
+			float dx = static_cast<float>(positions[0].first - positions[1].first);
+			float dy = static_cast<float>(positions[0].second - positions[1].second);
+			sumEuclideanDistBefore += std::sqrt(dx * dx + dy * dy);
+		}
+	}
+
+	// Perform the actual rotation
+	for (const auto& op : solution.ops) {
+		rotate(op.x, op.y, op.n);
+	}
+
+	// Count pairs and score after rotation in the same area
+	int32 afterPairs = 0;
+	float afterScoreFormedPairs = 0;
+	Array<bool> seenAfter(this->entityCount + 1, false); // Max entity value + 1
+	for (int32 cy = checkStartY; cy < checkEndY; ++cy) {
+		for (int32 cx = checkStartX; cx < checkEndX; ++cx) {
+			int32 currentEntity = entities[cy][cx];
+			if (!seenAfter[currentEntity] && isPair(cx, cy)) {
 				afterPairs++;
 				afterScoreFormedPairs += ScoreFactorFormedPairBonus;
 				seenAfter[currentEntity] = true;
@@ -557,6 +646,39 @@ Array<Solution> Field::getLegalMoves() const {
 
 bool Field::isFinished() const {
 	return countPairs() == size * size / 2;
+}
+
+
+/*
+* @brief 1手で到達可能な候補手を取得
+* @param tx 目標のx座標
+* @param ty 目標のy座標
+* @param ori 目標の向き
+* @return 候補の配列
+*/
+Array<Solution> Field::getReachableInOneMoveCandidates(int32 tx, int32 ty, BandOrientation ori) const
+{
+	Array<Solution> candidates;
+
+	if (ori == BandOrientation::Bottom) {
+		// 下から横向きに揃える
+		// (tx, ty)を右端とする横向き
+		for (int32 n = 2; n <= size; n++) {
+			// ops:(tx - n + 1, ty - n + 1, n)
+			if (ty - n + 1 < 0) continue; // フィールド外
+			if (tx - n + 1 < 0) continue; // フィールド外
+			candidates.emplace_back(Solution({ Operation{ tx - n + 1, ty - n + 1, n } }));
+		}
+	}
+	else {
+		// 右から縦向きに揃えるとき
+		for (int32 n = 2; n <= size; ++n) {
+			if (tx - n + 1 < 0) continue; // フィールド外
+			candidates.emplace_back(Solution({ Operation{ tx - n + 1, ty, n } }));
+		}
+	}
+
+	return candidates;
 }
 
 /*
@@ -703,7 +825,7 @@ size_t Field::computeHash() const {
 
 /*
 * @brief フィールドの評価値を計算する（ビームサーチ用）
-* @return float 評価値（高いほど良い状態）
+// @return float 評価値（高いほど良い状態）
 */
 
 float Field::evaluateState() const {
@@ -988,7 +1110,7 @@ float Field::calculateLocalClusteringCoefficient(int r_start_x, int r_start_y, i
 			cellsInRegion++;
 
 			int32 currentEntity = entities[y][x];
-			if (currentEntity == 0) continue; // Skip empty cells or boundary markers
+			// All entity values are valid, including 0
 
 			int sameTypeNeighbors = 0;
 			int totalNeighbors = 0;
@@ -1058,9 +1180,9 @@ float Field::calculateLocalPairCompletion(int r_start_x, int r_start_y, int r_si
 			int x = r_start_x + i;
 			int y = r_start_y + j;
 
-			if (x >= size || y >= size || entities[y][x] == 0) continue;
+			if (x >= size || y >= size) continue;
 
-			possiblePairsInRegion++; // Each non-empty cell could potentially form one end of a pair
+			possiblePairsInRegion++; // Each cell could potentially form one end of a pair
 
 			if (visited[i][j]) continue;
 
@@ -1071,7 +1193,7 @@ float Field::calculateLocalPairCompletion(int r_start_x, int r_start_y, int r_si
 				int nx_global = r_start_x + nx_local;
 				int ny_global = r_start_y + ny_local;
 
-				if (nx_global < size && ny_global < size && entities[y][x] == entities[ny_global][nx_global] && entities[y][x] != 0) {
+				if (nx_global < size && ny_global < size && entities[y][x] == entities[ny_global][nx_global]) {
 					pairsInRegion++;
 					visited[i][j] = true;
 					visited[nx_local][ny_local] = true;
@@ -1084,7 +1206,7 @@ float Field::calculateLocalPairCompletion(int r_start_x, int r_start_y, int r_si
 				int ny_local = j;
 				int nx_global = r_start_x + nx_local;
 				int ny_global = r_start_y + ny_local;
-				if (nx_global < size && ny_global < size && entities[y][x] == entities[ny_global][nx_global] && entities[y][x] != 0) {
+				if (nx_global < size && ny_global < size && entities[y][x] == entities[ny_global][nx_global]) {
 					pairsInRegion++;
 					visited[i][j] = true;
 					visited[nx_local][ny_local] = true;
@@ -1120,14 +1242,14 @@ float Field::calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_si
 				int ny = r_start_y + j + 1;
 				if (ny < size) {
 					totalEdges++;
-					if (entities[y][x] == entities[ny][nx] || entities[y][x] == 0 || entities[ny][nx] == 0) {
+					if (entities[y][x] == entities[ny][nx]) {
 						smoothEdges++;
 					}
 				}
 			}
 			else if (y + 1 < size) { // Boundary horizontal edge (with cell outside subgrid but inside main grid)
 				totalEdges++;
-				if (entities[y][x] == entities[y + 1][x] || entities[y][x] == 0 || entities[y + 1][x] == 0) {
+				if (entities[y][x] == entities[y + 1][x]) {
 					smoothEdges++;
 				}
 			}
@@ -1139,14 +1261,14 @@ float Field::calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_si
 				int ny = y;
 				if (nx < size) {
 					totalEdges++;
-					if (entities[y][x] == entities[ny][nx] || entities[y][x] == 0 || entities[ny][nx] == 0) {
+					if (entities[y][x] == entities[ny][nx]) {
 						smoothEdges++;
 					}
 				}
 			}
 			else if (x + 1 < size) { // Boundary vertical edge
 				totalEdges++;
-				if (entities[y][x] == entities[y][x + 1] || entities[y][x] == 0 || entities[y][x + 1] == 0) {
+				if (entities[y][x] == entities[y][x + 1]) {
 					smoothEdges++;
 				}
 			}
@@ -1164,17 +1286,17 @@ float Field::calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_si
 */
 float Field::calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) const {
 	// 最も効果が高いと思われるメトリクスのみ計算
-    float old_local_pc = calculateLocalPairCompletion(op_x, op_y, op_size);
-    float old_local_lo = calculateLocalLocalOrder(op_x, op_y, op_size);
-    
-    // 一時フィールドを作成して回転
-    Field tempField = *this;
-    tempField.rotate(op_x, op_y, op_size);
-    
-    float new_local_pc = tempField.calculateLocalPairCompletion(op_x, op_y, op_size);
-    float new_local_lo = tempField.calculateLocalLocalOrder(op_x, op_y, op_size);
-    
-    // 重み付け
+	float old_local_pc = calculateLocalPairCompletion(op_x, op_y, op_size);
+	float old_local_lo = calculateLocalLocalOrder(op_x, op_y, op_size);
+
+	// 一時フィールドを作成して回転
+	Field tempField = *this;
+	tempField.rotate(op_x, op_y, op_size);
+
+	float new_local_pc = tempField.calculateLocalPairCompletion(op_x, op_y, op_size);
+	float new_local_lo = tempField.calculateLocalLocalOrder(op_x, op_y, op_size);
+
+	// 重み付け
 	return (new_local_pc - old_local_pc) * 0.7f + (new_local_lo - old_local_lo) * 0.3f;
 }
 

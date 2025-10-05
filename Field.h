@@ -20,6 +20,12 @@ public:
 	// 試合の開始時刻（秒単位のUnixエポックタイムスタンプ）
 	int32 startsAt;
 
+	// 揃える順の列挙型
+	enum class BandOrientation {
+		Bottom,
+		Right
+	};
+
 	// コンストラクタでフィールドを初期化
 	Field(int32 size);
 
@@ -55,23 +61,18 @@ public:
 	// 指定した範囲を右方向に90度回転させる関数
 	void rotate(int32 x, int32 y, int32 n);
 
-	// 指定した範囲を左方向に90度回転させる関数
-	void rotateReverse(int32 x, int32 y, int32 n);
-
 	// フィールドを描画する関数
 	void draw() const;
 
 	// フィールドのペアを数える
 	int32 countPairs() const;
 
-	// 左上から連続のペアを数える
-	int32 countPairsFromTopLeftHorizontal() const;
-
-	// 左上から連続のペアを数える
-	int32 countPairsFromTopLeftVertical() const;
 
 	// 差分更新
 	std::pair<int32, float> rotateAndGetDiff(int32 x, int32 y, int32 n);
+
+	// 差分更新（複数回）
+	std::pair<int32, float> rotateMultipleAndGetDiff(const Solution& solution);
 
 	// フィールドのサイズを取得
 	int32 getSize() const;
@@ -109,6 +110,9 @@ public:
 	// 終了判定
 	bool isFinished() const;
 
+	// 1手で任意の座標へ移動可能な手を列挙
+	Array<Solution> getReachableInOneMoveCandidates(int32 tx, int32 ty, BandOrientation ori) const;
+
 	// フィールドの評価値を計算する（ビームサーチ用）
 	float evaluateState() const;
 	float evaluateStateWithEntropy() const;
@@ -130,10 +134,6 @@ public:
 
 	// エンティティ情報取得メソッド
 	std::vector<std::pair<int32, int32>> getEntityPositions(int32 entity) const;
-	bool isEntityPaired(int32 entity) const;
-	float getEntityEuclideanDistance(int32 entity) const;
-	float getTotalEuclideanDistance() const;
-	float getNearestSameEntityDistance(int32 x, int32 y) const;
 
 	bool isValidRotation(int32 x, int32 y, int32 n) const;
 

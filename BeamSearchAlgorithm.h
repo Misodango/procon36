@@ -32,6 +32,26 @@ private:
 		int32 stepCount; // 何手で到達したか
 	};
 
+	// IDA*-like iterative deepening structures
+	struct OperationScore {
+		int32 x, y, size;
+		int32 pairDiff;
+		float scoreDiff;
+		
+		bool operator<(const OperationScore& other) const {
+			// Higher pairDiff and scoreDiff are better
+			if (pairDiff != other.pairDiff) return pairDiff > other.pairDiff;
+			return scoreDiff > other.scoreDiff;
+		}
+	};
+
+	// IDA*-like candidate generation with threshold
+	std::vector<NextStateCandidate> generateNextStatesIDA(
+		const BeamState& current,
+		int32 maxCandidates,
+		float scoreThreshold
+	);
+
 public:
 	BeamSearchAlgorithm(const Field& field, int32 beamWidth = 100, int32 maxDepth = 500);
 
