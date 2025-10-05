@@ -14,6 +14,6 @@ private:
 	Solution m_accumulatedSolution;
 
 public:
-	IterativeBeamSearchAlgorithm(const Field& initialField, int32 beamWidthPerStep = 500, int32 dethPerStep = 50 , int32 maxTotalSteps = 300);
+	IterativeBeamSearchAlgorithm(const Field& initialField, int32 beamWidthPerStep = 500, int32 dethPerStep = 200 , int32 maxTotalSteps = 300);
 	Solution run();
 };

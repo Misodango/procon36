@@ -443,6 +443,7 @@ bool Field::isPair(int32 x, int32 y) const {
 * @param x x座標
 * @param y y座標
 * @param n サイズ
+* return std::pair<int32, float> (ペアの増減数, 評価値の増減)
 */
 
 std::pair<int32, float> Field::rotateAndGetDiff(int32 x, int32 y, int32 n) {
@@ -1162,35 +1163,18 @@ float Field::calculateLocalEdgeSmoothness(int r_start_x, int r_start_y, int r_si
 * @return float Entropy difference due to the rotation
 */
 float Field::calculateEntropyDiffForRotation(int op_x, int op_y, int op_size) const {
-	// Weights (should be consistent with evaluateStateWithEntropy)
-	float w_h = -0.1f;
-	float w_c = 0.2f;
-	float w_lo = 0.4f;
-	float w_pc = 0.5f;
-	float w_es = 0.3f;
-
-	// 1. Calculate sum of local scores for the region BEFORE rotation
-	float old_local_h = calculateLocalPositionalEntropy(op_x, op_y, op_size);
-	float old_local_c = calculateLocalClusteringCoefficient(op_x, op_y, op_size);
-	float old_local_lo = calculateLocalLocalOrder(op_x, op_y, op_size);
-	float old_local_pc = calculateLocalPairCompletion(op_x, op_y, op_size);
-	float old_local_es = calculateLocalEdgeSmoothness(op_x, op_y, op_size);
-
-	float old_local_score_sum = w_h * old_local_h + w_c * old_local_c + w_lo * old_local_lo + w_pc * old_local_pc + w_es * old_local_es;
-
-	// 2. Create a temporary field, apply rotation, and calculate sum of local scores AFTER rotation
-	Field tempField = *this;
-	tempField.rotate(op_x, op_y, op_size);
-
-	float new_local_h = tempField.calculateLocalPositionalEntropy(op_x, op_y, op_size);
-	float new_local_c = tempField.calculateLocalClusteringCoefficient(op_x, op_y, op_size);
-	float new_local_lo = tempField.calculateLocalLocalOrder(op_x, op_y, op_size);
-	float new_local_pc = tempField.calculateLocalPairCompletion(op_x, op_y, op_size);
-	float new_local_es = tempField.calculateLocalEdgeSmoothness(op_x, op_y, op_size);
-
-	float new_local_score_sum = w_h * new_local_h + w_c * new_local_c + w_lo * new_local_lo + w_pc * new_local_pc + w_es * new_local_es;
-
-	// 3. The difference is the change in score due to the rotation in that local area.
-	return new_local_score_sum - old_local_score_sum;
+	// 最も効果が高いと思われるメトリクスのみ計算
+    float old_local_pc = calculateLocalPairCompletion(op_x, op_y, op_size);
+    float old_local_lo = calculateLocalLocalOrder(op_x, op_y, op_size);
+    
+    // 一時フィールドを作成して回転
+    Field tempField = *this;
+    tempField.rotate(op_x, op_y, op_size);
+    
+    float new_local_pc = tempField.calculateLocalPairCompletion(op_x, op_y, op_size);
+    float new_local_lo = tempField.calculateLocalLocalOrder(op_x, op_y, op_size);
+    
+    // 重み付け
+	return (new_local_pc - old_local_pc) * 0.7f + (new_local_lo - old_local_lo) * 0.3f;
 }
 

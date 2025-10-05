@@ -25,8 +25,17 @@ private:
 		}
 	};
 
+	struct NextStateCandidate {
+		Field field;
+		std::vector<Operation> operationsToReach; // この盤面に至る手順
+		float estimatedScore;
+		int32 stepCount; // 何手で到達したか
+	};
+
 public:
 	BeamSearchAlgorithm(const Field& field, int32 beamWidth = 100, int32 maxDepth = 500);
+
+	std::vector<NextStateCandidate> generateNextStates(const BeamState& current, int32 maxMultiSteps, int32 topKSingle, int32 topKMulti);
 
 	Solution run();
 };
