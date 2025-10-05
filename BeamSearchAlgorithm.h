@@ -25,8 +25,37 @@ private:
 		}
 	};
 
+	struct NextStateCandidate {
+		Field field;
+		std::vector<Operation> operationsToReach; // この盤面に至る手順
+		float estimatedScore;
+		int32 stepCount; // 何手で到達したか
+	};
+
+	// IDA*-like iterative deepening structures
+	struct OperationScore {
+		int32 x, y, size;
+		int32 pairDiff;
+		float scoreDiff;
+		
+		bool operator<(const OperationScore& other) const {
+			// Higher pairDiff and scoreDiff are better
+			if (pairDiff != other.pairDiff) return pairDiff > other.pairDiff;
+			return scoreDiff > other.scoreDiff;
+		}
+	};
+
+	// IDA*-like candidate generation with threshold
+	std::vector<NextStateCandidate> generateNextStatesIDA(
+		const BeamState& current,
+		int32 maxCandidates,
+		float scoreThreshold
+	);
+
 public:
 	BeamSearchAlgorithm(const Field& field, int32 beamWidth = 100, int32 maxDepth = 500);
+
+	std::vector<NextStateCandidate> generateNextStates(const BeamState& current, int32 maxMultiSteps, int32 topKSingle, int32 topKMulti);
 
 	Solution run();
 };
